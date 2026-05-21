@@ -281,7 +281,7 @@
 
   function setZoom(nextZoom, anchor = null) {
     const oldZoom = state.zoom;
-    const clamped = clamp(nextZoom, 0.65, 5);
+    const clamped = clamp(nextZoom, 0.65, 10);
     if (Math.abs(clamped - oldZoom) < 0.001) return;
 
     const target = anchor || {

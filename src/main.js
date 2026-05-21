@@ -479,16 +479,8 @@
   function drawRealNationalParks(target) {
     let labels = 0;
     target.save();
-    target.lineJoin = "round";
-    target.lineCap = "round";
 
     for (const park of real.nationalParks) {
-      if (isNationalParkVisible(park)) {
-        target.fillStyle = park.marine ? "rgba(99, 197, 218, 0.15)" : palette.parkFill;
-        target.strokeStyle = park.marine ? "rgba(155, 226, 237, 0.42)" : palette.parkStroke;
-        target.lineWidth = 1.1 / state.zoom;
-        for (const ring of park.rings || []) drawWorldPolygon(target, ring);
-      }
       if (park === state.selectedPlace || park === state.hoverPlace) {
         const markerSize = 36 / state.zoom;
         target.fillStyle = park === state.selectedPlace ? palette.selected : "#bdf3ff";
@@ -1397,15 +1389,6 @@
       const p = placePoint(place);
       const d = Math.hypot(p.x - x, p.y - y);
       if (d < radius) consider(place, d);
-    }
-
-    if (state.showNature && real?.nationalParks?.length) {
-      for (const park of real.nationalParks) {
-        if (!isNationalParkVisible(park)) continue;
-        if ((park.rings || []).some((ring) => pointInPolygon([x, y], ring))) {
-          consider(park, 5 / state.zoom, 5 / state.zoom);
-        }
-      }
     }
 
     const linePriority = 4 / state.zoom;

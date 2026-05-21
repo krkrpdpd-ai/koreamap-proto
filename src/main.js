@@ -707,7 +707,7 @@
   }
 
   function isMajorRailway(rail) {
-    return majorRailwayNames.has(rail.name) && (rail.length || 0) >= 10 && rail.path?.length >= 3;
+    return majorRailwayNames.has(rail.name) && (rail.lengthKm || 0) >= 18 && rail.path?.length >= 3;
   }
 
   function drawWorldStroke(target, points, color, width, fixedScreenWidth = false) {

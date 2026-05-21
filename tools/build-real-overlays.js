@@ -262,6 +262,28 @@ const countySeeds = [
   ...(options || {})
 }));
 
+const majorRailwayGapTolerances = new Map([
+  ["경부선", 95],
+  ["경부고속선", 95],
+  ["호남선", 90],
+  ["호남고속선", 75],
+  ["전라선", 90],
+  ["중앙선", 90],
+  ["동해선", 70],
+  ["경전선", 90],
+  ["장항선", 90],
+  ["서해선", 65],
+  ["영동선", 65],
+  ["태백선", 65],
+  ["경강선", 75],
+  ["경춘선", 65],
+  ["경원선", 65],
+  ["경의선", 65],
+  ["중부내륙선", 65],
+  ["수서평택고속선", 65],
+  ["인천국제공항선", 65]
+]);
+
 function readJson(filePath) {
   return JSON.parse(fs.readFileSync(filePath, "utf8"));
 }
@@ -679,7 +701,88 @@ function buildRailways(provinces) {
       });
     }
   }
-  return mergeLines(dedupeLines(raw), 20, { genericNames: new Set(["rail", "railway", "subway", "light_rail", "tram"]) });
+  return stitchMajorRailwayGaps(mergeLines(dedupeLines(raw), 20, { genericNames: new Set(["rail", "railway", "subway", "light_rail", "tram"]) }));
+}
+
+function stitchMajorRailwayGaps(railways) {
+  const grouped = new Map();
+  const passthrough = [];
+
+  for (const railway of railways) {
+    if (railway.class !== "rail") {
+      passthrough.push(railway);
+      continue;
+    }
+
+    const canonicalName = canonicalRailwayName(railway.name);
+    const tolerance = railwayGapTolerance(canonicalName);
+    if (!tolerance) {
+      passthrough.push(railway);
+      continue;
+    }
+    if ((railway.lengthKm || 0) < 5) {
+      passthrough.push(railway);
+      continue;
+    }
+
+    if (!grouped.has(canonicalName)) grouped.set(canonicalName, { name: canonicalName, tolerance, railways: [] });
+    grouped.get(canonicalName).railways.push({
+      ...railway,
+      name: canonicalName,
+      path: railway.path.map((point) => point.slice())
+    });
+  }
+
+  return passthrough.concat([...grouped.values()].flatMap((group) => stitchRailwayGroup(group.railways, group.tolerance, group.name)));
+}
+
+function canonicalRailwayName(name) {
+  const text = String(name || "").replace(/\s+/g, "");
+  if (/연결선로/.test(text)) return text;
+  if (text === "경부본선") return "경부선";
+  if (text === "호남본선") return "호남선";
+  return text;
+}
+
+function railwayGapTolerance(name) {
+  return majorRailwayGapTolerances.get(name) || 0;
+}
+
+function stitchRailwayGroup(railways, tolerance, name) {
+  const pending = railways.map((railway) => ({ ...railway, path: railway.path.map((point) => point.slice()) }));
+  const stitched = [];
+
+  while (pending.length) {
+    const current = pending.pop();
+    let changed = true;
+    while (changed) {
+      changed = false;
+      for (let i = pending.length - 1; i >= 0; i--) {
+        const joined = joinPathsWithGap(current.path, pending[i].path, tolerance);
+        if (!joined) continue;
+        current.path = joined.path;
+        current.name = name;
+        current.length = Math.round(pathLength(current.path));
+        current.lengthKm = round((current.lengthKm || 0) + (pending[i].lengthKm || 0) + joined.gapKm);
+        current.stitchedGaps = (current.stitchedGaps || 0) + (pending[i].stitchedGaps || 0) + (joined.stitched ? 1 : 0);
+        pending.splice(i, 1);
+        changed = true;
+        break;
+      }
+    }
+    stitched.push(current);
+  }
+
+  return filterStitchedRailwayComponents(stitched.sort((a, b) => (b.lengthKm || 0) - (a.lengthKm || 0)));
+}
+
+function filterStitchedRailwayComponents(railways) {
+  if (railways.length <= 1) return railways;
+
+  const longestLengthKm = railways[0].lengthKm || 0;
+  if (longestLengthKm < 50) return railways;
+
+  return railways.filter((railway, index) => index === 0 || (railway.lengthKm || 0) >= 18);
 }
 
 function buildPlaces(provinces) {

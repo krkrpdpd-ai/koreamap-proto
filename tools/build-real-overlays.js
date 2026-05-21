@@ -467,12 +467,65 @@ function buildRoads(provinces) {
 
 function buildRivers(provinces) {
   const raw = readJson(riverPath).features.flatMap((feature) => convertLineFeature(feature, "river", provinces, { tolerance: 0.55 }));
-  return mergeLines(dedupeLines(raw), 4.5, { genericNames: new Set(["river", "stream", "waterway"]) })
+  return stitchMajorRiverGaps(mergeLines(dedupeLines(raw), 4.5, { genericNames: new Set(["river", "stream", "waterway"]) }).map(refreshMergedRiverWidth))
     .map(refreshMergedRiverWidth)
     .filter(keepDisplayRiver)
     .sort((a, b) => (b.displayWidth || 0) - (a.displayWidth || 0) || (b.length || 0) - (a.length || 0))
     .slice(0, 220)
     .sort((a, b) => (b.length || 0) - (a.length || 0));
+}
+
+function stitchMajorRiverGaps(rivers) {
+  const grouped = new Map();
+  const passthrough = [];
+
+  for (const river of rivers) {
+    const tolerance = riverGapTolerance(river.name);
+    if (!tolerance) {
+      passthrough.push(river);
+      continue;
+    }
+    const key = normalizeName(river.name);
+    if (!grouped.has(key)) grouped.set(key, { tolerance, rivers: [] });
+    grouped.get(key).rivers.push(river);
+  }
+
+  return passthrough.concat([...grouped.values()].flatMap((group) => stitchRiverGroup(group.rivers, group.tolerance)));
+}
+
+function riverGapTolerance(name) {
+  const compact = String(name || "").replace(/\s+/g, "");
+  if (/서낙동강|seonakdong/i.test(compact)) return 0;
+  if (/낙동강|nakdong/i.test(compact)) return 90;
+  return 0;
+}
+
+function stitchRiverGroup(rivers, tolerance) {
+  const pending = rivers.map((river) => ({ ...river, path: river.path.map((point) => point.slice()) }));
+  const stitched = [];
+
+  while (pending.length) {
+    const current = pending.pop();
+    let changed = true;
+    while (changed) {
+      changed = false;
+      for (let i = pending.length - 1; i >= 0; i--) {
+        const joined = joinPathsWithGap(current.path, pending[i].path, tolerance);
+        if (!joined) continue;
+        current.path = joined.path;
+        current.length = Math.round((current.length || 0) + (pending[i].length || 0) + joined.gapKm * 1000);
+        current.lengthKm = round((current.lengthKm || 0) + (pending[i].lengthKm || 0) + joined.gapKm);
+        current.stitchedGaps = (current.stitchedGaps || 0) + (pending[i].stitchedGaps || 0) + (joined.stitched ? 1 : 0);
+        mergeLineMetadata(current, pending[i]);
+        pending.splice(i, 1);
+        changed = true;
+        break;
+      }
+    }
+    stitched.push(current);
+  }
+
+  return stitched.sort((a, b) => (b.length || 0) - (a.length || 0));
 }
 
 function riverWidthInfo(props, lengthKm) {
@@ -1188,6 +1241,44 @@ function joinPaths(a, b, tolerance) {
   if (pointDistance(aStart, bEnd) <= tolerance) return b.slice(0, -1).concat(a);
   if (pointDistance(aStart, bStart) <= tolerance) return b.slice(1).reverse().concat(a);
   return null;
+}
+
+function joinPathsWithGap(a, b, tolerance) {
+  const direct = joinPaths(a, b, 4.5);
+  if (direct) return { path: direct, gapKm: 0, stitched: false };
+
+  const candidates = [
+    { distance: pointDistance(a[a.length - 1], b[0]), path: () => appendWithConnector(a, b) },
+    { distance: pointDistance(a[a.length - 1], b[b.length - 1]), path: () => appendWithConnector(a, b.slice().reverse()) },
+    { distance: pointDistance(a[0], b[b.length - 1]), path: () => appendWithConnector(b, a) },
+    { distance: pointDistance(a[0], b[0]), path: () => appendWithConnector(b.slice().reverse(), a) }
+  ].sort((left, right) => left.distance - right.distance);
+
+  if (!candidates.length || candidates[0].distance > tolerance) return null;
+  const path = candidates[0].path();
+  return {
+    path,
+    gapKm: round((candidates[0].distance / tilePx) * tileKm),
+    stitched: true
+  };
+}
+
+function appendWithConnector(a, b) {
+  return a.concat(curvedGapConnector(a[a.length - 1], b[0]), b.slice(1));
+}
+
+function curvedGapConnector(start, end) {
+  const distance = pointDistance(start, end);
+  if (!distance) return [];
+  const dx = end[0] - start[0];
+  const dy = end[1] - start[1];
+  const nx = -dy / distance;
+  const ny = dx / distance;
+  const bend = Math.min(18, distance * 0.18);
+  return [0.22, 0.44, 0.66, 0.84].map((t) => {
+    const sway = Math.sin(Math.PI * t) * bend;
+    return roundPoint([start[0] + dx * t + nx * sway, start[1] + dy * t + ny * sway]);
+  });
 }
 
 function dedupeLines(lines) {

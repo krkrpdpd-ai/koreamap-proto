@@ -20,6 +20,7 @@
     showRivers: true,
     showLakes: true,
     showNationalParks: true,
+    showAdmin: true,
     showProvinces: true,
     showCities: true,
     showCounties: true,
@@ -958,7 +959,7 @@
   }
 
   function drawIslands(target) {
-    if (!state.showIslands) return;
+    if (!state.showAdmin || !state.showIslands) return;
     if (!selectableIslands.length) return;
     const islands = [...selectableIslands].sort((a, b) => (b.labelWeight || 9) - (a.labelWeight || 9));
     for (const island of islands) {
@@ -1690,7 +1691,7 @@
     let bestScore = radius;
     const sourcePlaces = real?.places?.length ? real.places : data.places;
     const selectablePlaces = sourcePlaces.filter(isPlaceKindVisible);
-    if (state.showIslands) selectablePlaces.push(...selectableIslands);
+    if (state.showAdmin && state.showIslands) selectablePlaces.push(...selectableIslands);
     if (isNatureLayerVisible("showMountains")) selectablePlaces.push(...majorMountains);
     if (isNatureLayerVisible("showNationalParks")) selectablePlaces.push(...(real?.nationalParks || []).filter(isNationalParkVisible));
     if (isNatureLayerVisible("showLakes")) selectablePlaces.push(...data.lakes);
@@ -1843,6 +1844,7 @@
   }
 
   function isPlaceKindVisible(place) {
+    if (!state.showAdmin) return false;
     if (place.kind === "province") return state.showProvinces;
     if (place.kind === "county") return state.showCounties;
     if (place.kind === "island") return state.showIslands;
@@ -1871,7 +1873,8 @@
     const groups = {
       toggleRoads: ["toggleExpressways", "toggleNationalRoads", "toggleRestAreas"],
       toggleRailways: ["toggleRailwayStations"],
-      toggleNature: ["toggleMountains", "toggleRivers", "toggleLakes", "toggleNationalParks"]
+      toggleNature: ["toggleMountains", "toggleRivers", "toggleLakes", "toggleNationalParks"],
+      toggleAdmin: ["toggleProvinces", "toggleCities", "toggleCounties", "toggleIslands"]
     };
 
     for (const [parentId, childIds] of Object.entries(groups)) {
@@ -1897,6 +1900,7 @@
   setToggle("toggleRivers", "showRivers");
   setToggle("toggleLakes", "showLakes");
   setToggle("toggleNationalParks", "showNationalParks");
+  setToggle("toggleAdmin", "showAdmin");
   setToggle("toggleProvinces", "showProvinces");
   setToggle("toggleCities", "showCities");
   setToggle("toggleCounties", "showCounties");

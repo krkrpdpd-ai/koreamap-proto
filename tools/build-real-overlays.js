@@ -53,14 +53,73 @@ const islandSeeds = [
   { id: "marado", name: "마라도", lon: 126.27, lat: 33.12, icon: "lighthouse", labelWeight: 5 },
   { id: "chujado", name: "추자도", lon: 126.30, lat: 33.96, icon: "island", labelWeight: 5 },
   { id: "ulleungdo", name: "울릉도", lon: 130.90, lat: 37.49, icon: "island", labelWeight: 1 },
-  { id: "dokdo", name: "독도", lon: 131.87, lat: 37.24, icon: "lighthouse", labelWeight: 1 }
+  { id: "dokdo", name: "독도", lon: 131.87, lat: 37.24, icon: "lighthouse", labelWeight: 1 },
+  { id: "deokjeokdo", name: "덕적도", lon: 126.15, lat: 37.23, icon: "island", labelWeight: 5 },
+  { id: "jawoldo", name: "자월도", lon: 126.31, lat: 37.25, icon: "island", labelWeight: 6 },
+  { id: "seungbongdo", name: "승봉도", lon: 126.30, lat: 37.17, icon: "island", labelWeight: 6 },
+  { id: "sapsido", name: "삽시도", lon: 126.35, lat: 36.33, icon: "island", labelWeight: 6 },
+  { id: "wonsando", name: "원산도", lon: 126.44, lat: 36.37, icon: "island", labelWeight: 6 },
+  { id: "seonyudo-gunsan", name: "선유도", lon: 126.41, lat: 35.81, icon: "island", labelWeight: 5 },
+  { id: "munyeodo", name: "무녀도", lon: 126.42, lat: 35.81, icon: "island", labelWeight: 6 },
+  { id: "jangjado", name: "장자도", lon: 126.40, lat: 35.81, icon: "island", labelWeight: 6 },
+  { id: "imjado", name: "임자도", lon: 126.10, lat: 35.08, icon: "island", labelWeight: 5 },
+  { id: "jeungdo", name: "증도", lon: 126.14, lat: 35.00, icon: "island", labelWeight: 5 },
+  { id: "jaeundo", name: "자은도", lon: 126.05, lat: 34.89, icon: "island", labelWeight: 6 },
+  { id: "amtaedo", name: "암태도", lon: 126.12, lat: 34.86, icon: "island", labelWeight: 6 },
+  { id: "anjwado", name: "안좌도", lon: 126.12, lat: 34.75, icon: "island", labelWeight: 6 },
+  { id: "hauido", name: "하의도", lon: 126.04, lat: 34.62, icon: "island", labelWeight: 6 },
+  { id: "bigeumdo", name: "비금도", lon: 125.94, lat: 34.76, icon: "island", labelWeight: 5 },
+  { id: "dochodo", name: "도초도", lon: 125.96, lat: 34.70, icon: "island", labelWeight: 5 },
+  { id: "jangsando", name: "장산도", lon: 126.16, lat: 34.64, icon: "island", labelWeight: 6 },
+  { id: "jodo", name: "조도", lon: 126.00, lat: 34.30, icon: "island", labelWeight: 5 },
+  { id: "gwanmaedo", name: "관매도", lon: 126.05, lat: 34.25, icon: "island", labelWeight: 6 },
+  { id: "cheongsando", name: "청산도", lon: 126.87, lat: 34.18, icon: "island", labelWeight: 4 },
+  { id: "soando", name: "소안도", lon: 126.64, lat: 34.16, icon: "island", labelWeight: 5 },
+  { id: "nohwado", name: "노화도", lon: 126.57, lat: 34.19, icon: "island", labelWeight: 6 },
+  { id: "saengildo", name: "생일도", lon: 126.96, lat: 34.32, icon: "island", labelWeight: 6 },
+  { id: "geumdangdo", name: "금당도", lon: 127.03, lat: 34.40, icon: "island", labelWeight: 6 },
+  { id: "geogeumdo", name: "거금도", lon: 127.13, lat: 34.46, icon: "island", labelWeight: 5 },
+  { id: "sorokdo", name: "소록도", lon: 127.12, lat: 34.51, icon: "island", labelWeight: 6 },
+  { id: "dolsando", name: "돌산도", lon: 127.75, lat: 34.63, icon: "island", labelWeight: 5 },
+  { id: "baekyado", name: "백야도", lon: 127.64, lat: 34.61, icon: "island", labelWeight: 6 },
+  { id: "sado", name: "사도", lon: 127.55, lat: 34.58, icon: "island", labelWeight: 6 },
+  { id: "sonjukdo", name: "손죽도", lon: 127.36, lat: 34.29, icon: "island", labelWeight: 6 },
+  { id: "chodo", name: "초도", lon: 127.24, lat: 34.24, icon: "island", labelWeight: 6 },
+  { id: "yokjido", name: "욕지도", lon: 128.25, lat: 34.63, icon: "island", labelWeight: 5 },
+  { id: "yeonhwado", name: "연화도", lon: 128.36, lat: 34.65, icon: "island", labelWeight: 6 },
+  { id: "hansando", name: "한산도", lon: 128.49, lat: 34.77, icon: "island", labelWeight: 4 },
+  { id: "bijindo", name: "비진도", lon: 128.46, lat: 34.72, icon: "island", labelWeight: 6 },
+  { id: "maemuldo", name: "매물도", lon: 128.58, lat: 34.64, icon: "island", labelWeight: 5 },
+  { id: "saryangdo", name: "사량도", lon: 128.21, lat: 34.85, icon: "island", labelWeight: 5 },
+  { id: "mireukdo", name: "미륵도", lon: 128.41, lat: 34.81, icon: "island", labelWeight: 6 },
+  { id: "gadeokdo", name: "가덕도", lon: 128.83, lat: 35.02, icon: "island", labelWeight: 5 },
+  { id: "udo-jeju", name: "우도", lon: 126.95, lat: 33.50, icon: "island", labelWeight: 5 },
+  { id: "biyangdo", name: "비양도", lon: 126.23, lat: 33.41, icon: "island", labelWeight: 6 },
+  { id: "gapado", name: "가파도", lon: 126.27, lat: 33.17, icon: "island", labelWeight: 6 },
+  { id: "chagwido", name: "차귀도", lon: 126.15, lat: 33.31, icon: "island", labelWeight: 6 }
 ];
 
 const nationalParkSeeds = [
   { id: "jirisan", name: "지리산국립공원", aliases: ["지리산"], lon: 127.73, lat: 35.34, radius: 44, labelWeight: 1 },
   { id: "gyeongju", name: "경주국립공원", aliases: ["경주"], lon: 129.22, lat: 35.79, radius: 26, labelWeight: 3 },
   { id: "gyeryongsan", name: "계룡산국립공원", aliases: ["계룡산"], lon: 127.20, lat: 36.35, radius: 24, labelWeight: 3 },
-  { id: "hallyeohaesang", name: "한려해상국립공원", aliases: ["한려해상"], lon: 128.00, lat: 34.73, radius: 42, labelWeight: 2 },
+  {
+    id: "hallyeohaesang",
+    name: "한려해상국립공원",
+    aliases: ["한려해상"],
+    lon: 128.00,
+    lat: 34.73,
+    radius: 42,
+    labelWeight: 2,
+    marine: true,
+    icon: "wave",
+    zones: [
+      { lon: 128.00, lat: 34.73, radius: 42 },
+      { lon: 128.39, lat: 34.76, radius: 36 },
+      { lon: 128.58, lat: 34.82, radius: 34 }
+    ],
+    description: "남해안의 섬, 바다, 리아스식 해안이 이어지는 해상 국립공원입니다. 여수-사천-통영-거제 주변 해역을 게임 지도에서 섬 탐험과 해상 항로 이벤트의 중심 구역으로 쓰기 좋습니다."
+  },
   { id: "seoraksan", name: "설악산국립공원", aliases: ["설악산"], lon: 128.47, lat: 38.12, radius: 38, labelWeight: 1 },
   { id: "songnisan", name: "속리산국립공원", aliases: ["속리산"], lon: 127.86, lat: 36.54, radius: 28, labelWeight: 2 },
   { id: "hallasan", name: "한라산국립공원", aliases: ["한라산"], lon: 126.53, lat: 33.36, radius: 36, labelWeight: 1 },
@@ -69,8 +128,37 @@ const nationalParkSeeds = [
   { id: "deogyusan", name: "덕유산국립공원", aliases: ["덕유산"], lon: 127.75, lat: 35.86, radius: 34, labelWeight: 2 },
   { id: "odaesan", name: "오대산국립공원", aliases: ["오대산"], lon: 128.59, lat: 37.79, radius: 32, labelWeight: 2 },
   { id: "juwangsan", name: "주왕산국립공원", aliases: ["주왕산"], lon: 129.14, lat: 36.39, radius: 24, labelWeight: 3 },
-  { id: "taean", name: "태안해안국립공원", aliases: ["태안해안"], lon: 126.29, lat: 36.75, radius: 34, labelWeight: 3 },
-  { id: "dadohae", name: "다도해해상국립공원", aliases: ["다도해해상"], lon: 126.75, lat: 34.32, radius: 44, labelWeight: 2 },
+  {
+    id: "taean",
+    name: "태안해안국립공원",
+    aliases: ["태안해안"],
+    lon: 126.29,
+    lat: 36.75,
+    radius: 34,
+    labelWeight: 3,
+    marine: true,
+    icon: "wave",
+    description: "서해안의 사구, 갯벌, 해안 숲이 중심인 해안 국립공원입니다. 태안반도와 안면도 주변을 해안 지형과 조수 간만 이벤트 구역으로 표현하기 좋습니다."
+  },
+  {
+    id: "dadohae",
+    name: "다도해해상국립공원",
+    aliases: ["다도해해상"],
+    lon: 126.75,
+    lat: 34.32,
+    radius: 44,
+    labelWeight: 2,
+    marine: true,
+    icon: "wave",
+    zones: [
+      { lon: 125.43, lat: 34.68, radius: 36 },
+      { lon: 126.05, lat: 34.34, radius: 38 },
+      { lon: 126.74, lat: 34.25, radius: 44 },
+      { lon: 127.34, lat: 34.27, radius: 36 },
+      { lon: 127.47, lat: 34.47, radius: 34 }
+    ],
+    description: "전남 남해의 여러 섬과 해역을 아우르는 국내 최대 규모의 해상 국립공원입니다. 흑산도, 홍도, 조도, 완도, 거문도권처럼 분산된 섬 권역을 항해와 섬 탐험 콘텐츠로 연결하기 좋습니다."
+  },
   { id: "bukhansan", name: "북한산국립공원", aliases: ["북한산"], lon: 126.99, lat: 37.62, radius: 22, labelWeight: 2 },
   { id: "chiaksan", name: "치악산국립공원", aliases: ["치악산"], lon: 128.05, lat: 37.36, radius: 26, labelWeight: 3 },
   { id: "woraksan", name: "월악산국립공원", aliases: ["월악산"], lon: 128.12, lat: 36.86, radius: 30, labelWeight: 3 },
@@ -719,9 +807,28 @@ function buildIslands() {
       icon: seed.icon,
       point: roundPoint(toWorld(lon, lat)),
       labelWeight: seed.labelWeight,
+      description: islandDescription(seed),
       source: match?.source || "curated island coordinate"
     };
   });
+}
+
+function islandDescription(seed) {
+  const name = seed.name;
+  if (/독도/.test(name)) return "동해의 최동단 섬입니다. 울릉도와 함께 동해 해상 탐험, 등대, 경비 거점 이벤트에 쓰기 좋은 지점입니다.";
+  if (/울릉/.test(name)) return "화산 지형과 해안 절벽이 두드러지는 동해의 대표 섬입니다. 독도 항로와 산악/해상 지형을 함께 표현하기 좋습니다.";
+  if (/제주/.test(name)) return "한라산을 중심으로 한 큰 화산섬입니다. 남쪽 해역의 중심 거점이자 별도 지역권으로 쓰기 좋습니다.";
+  if (/우도|비양도|가파도|마라도|차귀도/.test(name)) return "제주 주변의 부속 섬입니다. 짧은 항로, 해안 마을, 관광/탐험 이벤트 지점으로 배치하기 좋습니다.";
+  if (/한산도|욕지도|연화도|비진도|매물도|사량도|미륵도|거제|남해|가덕/.test(name)) {
+    return "한려해상권의 주요 섬입니다. 남해안 항로, 해전/해상 교통, 섬 마을 콘텐츠를 배치하기 좋은 지점입니다.";
+  }
+  if (/흑산|홍도|가거|조도|관매|청산|소안|노화|생일|금당|거문|금오|거금|소록|돌산|백야|사도|손죽|초도|보길|완도|진도|임자|증도|자은|암태|안좌|하의|비금|도초|장산/.test(name)) {
+    return "다도해권의 주요 섬입니다. 복잡한 섬 지형, 해상 국립공원, 항로 기반 탐험 요소를 표현하기 좋은 지점입니다.";
+  }
+  if (/안면|삽시|원산|선유|무녀|장자|덕적|자월|승봉|백령|대청|연평|강화|영종/.test(name)) {
+    return "서해안의 주요 섬입니다. 갯벌, 사구, 항구, 서해 항로 이벤트와 함께 쓰기 좋은 지점입니다.";
+  }
+  return "OSM 또는 보정 좌표 기반으로 표시한 주요 섬입니다. 섬 탐험, 항로, 해안 지형 콘텐츠의 거점으로 사용할 수 있습니다.";
 }
 
 function buildNationalParks() {
@@ -733,16 +840,19 @@ function buildNationalParks() {
     const match = bestNationalParkFeature(seed, features);
     const [lon, lat] = match?.geometry?.coordinates || [seed.lon, seed.lat];
     const center = toWorld(lon, lat);
+    const zones = seed.zones || [{ lon, lat, radius: seed.radius }];
     return {
       id: seed.id,
       name: seed.name,
       kind: "nationalPark",
       lon,
       lat,
-      icon: "park",
+      icon: seed.icon || "park",
       point: roundPoint(center),
-      rings: [parkPatch(center, seed.radius).map(roundPoint)],
+      rings: zones.map((zone) => parkPatch(toWorld(zone.lon, zone.lat), zone.radius || seed.radius).map(roundPoint)),
       labelWeight: seed.labelWeight,
+      marine: !!seed.marine,
+      description: seed.description,
       source: match ? "ArcGIS OSM POI" : "curated national park coordinate"
     };
   });

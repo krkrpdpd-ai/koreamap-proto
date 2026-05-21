@@ -189,7 +189,7 @@
     return (real?.islands || []).map((island) => ({
       ...island,
       kind: "island",
-      description: islandDetails[island.id] || `${island.name}은 지도에 표시된 주요 섬입니다.`
+      description: islandDetails[island.id] || island.description || `${island.name}은 지도에 표시된 주요 섬입니다.`
     }));
   }
 
@@ -483,13 +483,19 @@
     target.lineCap = "round";
 
     for (const park of real.nationalParks) {
+      if (isNationalParkVisible(park)) {
+        target.fillStyle = park.marine ? "rgba(99, 197, 218, 0.15)" : palette.parkFill;
+        target.strokeStyle = park.marine ? "rgba(155, 226, 237, 0.42)" : palette.parkStroke;
+        target.lineWidth = 1.1 / state.zoom;
+        for (const ring of park.rings || []) drawWorldPolygon(target, ring);
+      }
       if (park === state.selectedPlace || park === state.hoverPlace) {
         const markerSize = 36 / state.zoom;
         target.fillStyle = park === state.selectedPlace ? palette.selected : "#bdf3ff";
         target.fillRect(Math.round(park.point[0] - markerSize / 2), Math.round(park.point[1] - markerSize / 2), markerSize, markerSize);
       }
       if (isNationalParkVisible(park)) {
-        drawIcon(target, "park", park.point[0], park.point[1], 0.76, true);
+        drawIcon(target, park.icon || "park", park.point[0], park.point[1], 0.76, true);
       }
       if (state.showLabels && labels < 18 && park.labelWeight <= (state.zoom >= 1.35 ? 4 : 2)) {
         drawLabel(target, park.name, park.point[0] + 11, park.point[1] + 4, 10);
@@ -782,7 +788,9 @@
       }
 
       drawIcon(target, island.icon || "island", p.x, p.y, island.labelWeight <= 1 ? 1 : 0.82, true);
-      if (state.showLabels && (island.labelWeight <= 4 || state.zoom >= 1.25)) {
+      const showIslandLabel =
+        island.labelWeight <= 4 || (island.labelWeight <= 5 && state.zoom >= 1.25) || (island.labelWeight <= 6 && state.zoom >= 1.75);
+      if (state.showLabels && showIslandLabel) {
         drawLabel(target, island.name, p.x + 7, p.y - 1, island.labelWeight <= 1 ? 12 : 10);
       }
     }
@@ -1327,7 +1335,7 @@
 
     if (place.kind === "island") {
       inspectorTitle.textContent = place.name;
-      inspectorBody.textContent = `섬. ${place.description}`;
+      inspectorBody.textContent = `섬. ${place.description || "OSM 또는 보정 좌표 기반으로 표시한 주요 섬입니다."}`;
       state.staticDirty = true;
       return;
     }
@@ -1357,6 +1365,7 @@
   }
 
   function describeNationalPark(park) {
+    if (park.description) return park.description;
     const name = park.name || "국립공원";
     if (/경주/.test(name)) return "역사 유산과 산지가 함께 보존된 국립공원입니다. 게임에서는 문화 유적과 자연 지형이 만나는 지역으로 활용하기 좋습니다.";
     if (/한려|다도해|태안/.test(name)) return "해안과 섬, 바다 경관이 중심인 국립공원입니다. 항로, 섬, 해안 지형 요소와 함께 배치하기 좋습니다.";
@@ -1388,6 +1397,15 @@
       const p = placePoint(place);
       const d = Math.hypot(p.x - x, p.y - y);
       if (d < radius) consider(place, d);
+    }
+
+    if (state.showNature && real?.nationalParks?.length) {
+      for (const park of real.nationalParks) {
+        if (!isNationalParkVisible(park)) continue;
+        if ((park.rings || []).some((ring) => pointInPolygon([x, y], ring))) {
+          consider(park, 5 / state.zoom, 5 / state.zoom);
+        }
+      }
     }
 
     const linePriority = 4 / state.zoom;

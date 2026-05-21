@@ -2,6 +2,7 @@
   const data = window.KOREA_MAP_DATA;
   const real = window.KOREA_REAL_OVERLAYS || null;
   const maritime = window.KOREA_MARITIME_DATA || { ports: [], seaRoutes: [] };
+  const cultureTourism = window.KOREA_CULTURE_TOURISM_DATA || { heritageSites: [], touristSpots: [] };
   const canvas = document.getElementById("mapCanvas");
   const ctx = canvas.getContext("2d");
   const frame = document.querySelector(".map-frame");
@@ -19,6 +20,9 @@
     showMaritime: true,
     showPorts: true,
     showSeaRoutes: true,
+    showCultureTourism: true,
+    showHeritageSites: true,
+    showTouristSpots: true,
     showNature: true,
     showMountains: true,
     showRivers: true,
@@ -106,6 +110,10 @@
     seaRouteDark: "#2b7fa0",
     port: "#f4f1de",
     portDark: "#d86048",
+    heritage: "#d8b36a",
+    heritageDark: "#7c4d25",
+    tourism: "#69c7b8",
+    tourismDark: "#2b7fa0",
     subway: "#b7a6dc",
     boundary: "rgba(244, 241, 222, 0.9)",
     boundaryShadow: "rgba(23, 32, 42, 0.82)",
@@ -248,6 +256,22 @@
       lengthKm: geoPathLengthKm(route.points)
     };
   });
+
+  const heritageSites = buildCultureTourismPoints(cultureTourism.heritageSites || [], "heritageSite", "heritage");
+  const touristSpots = buildCultureTourismPoints(cultureTourism.touristSpots || [], "touristSpot", "tourist");
+
+  function buildCultureTourismPoints(items, type, defaultIcon) {
+    return items.map((item) => {
+      const p = toWorld([item.lon, item.lat]);
+      return {
+        ...item,
+        type,
+        kind: type,
+        icon: item.icon || defaultIcon,
+        point: [p.x, p.y]
+      };
+    });
+  }
 
   function buildSelectableRoadRoutes() {
     if (!real?.roads?.length) return [];
@@ -442,6 +466,7 @@
     if (state.showBoundaries && !real?.provinces?.length) drawProvinceBoundaries(staticCtx);
     drawPlaces(staticCtx);
     drawIslands(staticCtx);
+    drawCultureTourism(staticCtx);
     staticCtx.setTransform(1, 0, 0, 1, 0, 0);
     state.staticDirty = false;
   }
@@ -983,6 +1008,15 @@
     return state.zoom >= 1.85;
   }
 
+  function isCultureTourismVisible(feature) {
+    if (!state.showCultureTourism) return false;
+    if (feature.type === "heritageSite" && !state.showHeritageSites) return false;
+    if (feature.type === "touristSpot" && !state.showTouristSpots) return false;
+    if ((feature.labelWeight || 9) <= 2) return true;
+    if ((feature.labelWeight || 9) <= 4) return state.zoom >= 1.25;
+    return state.zoom >= 1.85;
+  }
+
   function isMajorRailway(rail) {
     return majorRailwayNames.has(rail.name) && (rail.lengthKm || 0) >= 18 && rail.path?.length >= 3;
   }
@@ -1107,6 +1141,39 @@
         drawLabel(target, `${mountain.name}${elevation}`, p.x + 7, p.y - 1, 11);
       }
     }
+  }
+
+  function drawCultureTourism(target) {
+    if (!state.showCultureTourism) return;
+
+    const features = [...heritageSites, ...touristSpots]
+      .filter(isCultureTourismVisible)
+      .sort((a, b) => (b.labelWeight || 9) - (a.labelWeight || 9));
+    let labels = 0;
+
+    target.save();
+    for (const feature of features) {
+      const p = placePoint(feature);
+      if (feature === state.selectedPlace || feature === state.hoverPlace) {
+        const markerSize = 34 / state.zoom;
+        target.fillStyle = feature === state.selectedPlace ? palette.selected : "#bdf3ff";
+        target.fillRect(Math.round(p.x - markerSize / 2), Math.round(p.y - markerSize / 2), markerSize, markerSize);
+      }
+
+      const isHeritage = feature.type === "heritageSite";
+      const scale = feature.labelWeight <= 1 ? 0.88 : feature.labelWeight <= 3 ? 0.76 : 0.64;
+      drawIcon(target, feature.icon || (isHeritage ? "heritage" : "tourist"), p.x, p.y, scale, true);
+
+      const showLabel =
+        (feature.labelWeight || 9) <= 2 ||
+        (state.zoom >= 1.35 && (feature.labelWeight || 9) <= 4) ||
+        (state.zoom >= 2.1 && (feature.labelWeight || 9) <= 6);
+      if (state.showLabels && showLabel && labels < 46) {
+        drawLabel(target, feature.name, p.x + 8 / state.zoom, p.y - 2 / state.zoom, feature.labelWeight <= 1 ? 10 : 9);
+        labels += 1;
+      }
+    }
+    target.restore();
   }
 
   function placePoint(place) {
@@ -1359,6 +1426,53 @@
         px(10, 10, 2, 2, "#ffd980");
         px(14, 14, 2, 2, "#c76e2e");
         break;
+      case "heritage":
+        px(5, 8, 14, 11, palette.heritageDark);
+        px(6, 7, 12, 10, palette.heritage);
+        px(8, 5, 8, 3, "#f4f1de");
+        px(10, 13, 4, 6, "#4b3427");
+        break;
+      case "tourist":
+        px(6, 7, 12, 12, palette.tourismDark);
+        px(7, 6, 10, 10, palette.tourism);
+        px(10, 9, 4, 4, "#f4f1de");
+        px(11, 16, 2, 4, "#f4f1de");
+        break;
+      case "palace":
+        px(4, 9, 16, 2, "#c84f38");
+        px(6, 6, 12, 3, "#d86048");
+        px(5, 12, 14, 8, palette.heritage);
+        px(7, 15, 2, 5, "#7c4d25");
+        px(15, 15, 2, 5, "#7c4d25");
+        px(11, 4, 2, 2, "#f4f1de");
+        break;
+      case "shrine":
+        px(5, 7, 14, 3, "#c84f38");
+        px(7, 11, 10, 2, palette.heritage);
+        px(8, 13, 2, 7, "#7c4d25");
+        px(14, 13, 2, 7, "#7c4d25");
+        px(10, 16, 4, 4, "#4b3427");
+        break;
+      case "pagoda":
+        px(6, 7, 12, 2, palette.heritage);
+        px(7, 10, 10, 2, palette.heritage);
+        px(8, 13, 8, 2, palette.heritage);
+        px(9, 16, 6, 2, palette.heritage);
+        px(11, 5, 2, 14, "#7c4d25");
+        break;
+      case "dolmen":
+        px(5, 9, 14, 4, "#8f8170");
+        px(7, 13, 3, 7, "#6e6256");
+        px(14, 13, 3, 7, "#6e6256");
+        px(8, 7, 8, 2, "#b2a28b");
+        break;
+      case "school":
+        px(5, 9, 14, 10, palette.heritage);
+        px(4, 7, 16, 2, "#7c4d25");
+        px(8, 12, 2, 7, "#4b3427");
+        px(14, 12, 2, 7, "#4b3427");
+        px(10, 4, 4, 3, "#f4f1de");
+        break;
       case "temple":
       case "hanok":
         px(6, 6, 12, 2, "#c84f38");
@@ -1423,6 +1537,43 @@
         px(6, 15, 3, 5, "#9b7950");
         px(15, 15, 3, 5, "#9b7950");
         px(9, 16, 6, 2, "#63c5da");
+        break;
+      case "market":
+        px(5, 9, 14, 10, "#d86048");
+        px(6, 7, 12, 3, "#f4f1de");
+        px(8, 13, 3, 6, "#ffd36b");
+        px(13, 13, 3, 6, "#69c7b8");
+        break;
+      case "gate":
+        px(4, 8, 16, 3, "#d86048");
+        px(6, 11, 12, 2, "#f2d27c");
+        px(7, 13, 3, 7, "#7c4d25");
+        px(14, 13, 3, 7, "#7c4d25");
+        break;
+      case "village":
+        px(5, 12, 7, 7, palette.tourism);
+        px(13, 10, 6, 9, "#f2d27c");
+        px(4, 10, 9, 2, "#d86048");
+        px(12, 8, 8, 2, "#7c4d25");
+        break;
+      case "riverRock":
+        px(4, 16, 16, 3, "#63c5da");
+        px(6, 10, 4, 6, "#8f8170");
+        px(11, 7, 5, 9, "#b2a28b");
+        px(16, 12, 3, 4, "#6e6256");
+        break;
+      case "science":
+        px(6, 14, 12, 4, palette.tourism);
+        px(10, 5, 4, 9, "#f4f1de");
+        px(8, 5, 8, 2, "#69c7b8");
+        px(7, 17, 10, 2, "#2b7fa0");
+        break;
+      case "cableCar":
+        px(5, 6, 14, 2, "#d8d0b0");
+        px(8, 10, 8, 7, palette.tourism);
+        px(10, 12, 4, 3, "#26313a");
+        px(11, 8, 2, 2, "#d8d0b0");
+        px(7, 18, 10, 2, "#2b7fa0");
         break;
       case "restArea":
         px(5, 7, 14, 10, "#2b2e34");
@@ -1492,6 +1643,7 @@
         px(12, 6, 2, 8, "#f4f1de");
         px(16, 8, 2, 6, "#f4f1de");
         break;
+      case "observatory":
       case "tower":
         px(11, 5, 2, 15, "#d8d0b0");
         px(8, 10, 8, 2, "#d8d0b0");
@@ -1744,6 +1896,23 @@
       return;
     }
 
+    if (place.type === "heritageSite") {
+      inspectorTitle.textContent = place.name;
+      const region = place.region ? `${place.region}. ` : "";
+      const era = place.era ? `${place.era} 시대. ` : "";
+      inspectorBody.textContent = `문화유적. ${region}${place.category || "문화유산"}. ${era}${place.description || "대표 문화유산 지점으로 표시됩니다."}`;
+      state.staticDirty = true;
+      return;
+    }
+
+    if (place.type === "touristSpot") {
+      inspectorTitle.textContent = place.name;
+      const region = place.region ? `${place.region}. ` : "";
+      inspectorBody.textContent = `관광지. ${region}${place.category || "대표 관광지"}. ${place.description || "게임 지도에서 방문 지점으로 활용할 수 있는 관광 명소입니다."}`;
+      state.staticDirty = true;
+      return;
+    }
+
     if (place.kind === "nationalPark") {
       inspectorTitle.textContent = place.name;
       inspectorBody.textContent = describeNationalPark(place);
@@ -1854,6 +2023,9 @@
     if (isNatureLayerVisible("showMountains")) selectablePlaces.push(...majorMountains);
     if (isNatureLayerVisible("showNationalParks")) selectablePlaces.push(...(real?.nationalParks || []).filter(isNationalParkVisible));
     if (isNatureLayerVisible("showLakes")) selectablePlaces.push(...data.lakes);
+    if (state.showCultureTourism) {
+      selectablePlaces.push(...heritageSites.filter(isCultureTourismVisible), ...touristSpots.filter(isCultureTourismVisible));
+    }
 
     function consider(candidate, distance, priority = 0) {
       const score = distance + priority;
@@ -2052,6 +2224,7 @@
       toggleRoads: ["toggleExpressways", "toggleNationalRoads", "toggleRestAreas"],
       toggleRailways: ["toggleRailwayStations"],
       toggleMaritime: ["togglePorts", "toggleSeaRoutes"],
+      toggleCultureTourism: ["toggleHeritageSites", "toggleTouristSpots"],
       toggleNature: ["toggleMountains", "toggleRivers", "toggleLakes", "toggleNationalParks"],
       toggleAdmin: ["toggleProvinces", "toggleCities", "toggleCounties", "toggleIslands"]
     };
@@ -2077,6 +2250,9 @@
   setToggle("toggleMaritime", "showMaritime");
   setToggle("togglePorts", "showPorts");
   setToggle("toggleSeaRoutes", "showSeaRoutes");
+  setToggle("toggleCultureTourism", "showCultureTourism");
+  setToggle("toggleHeritageSites", "showHeritageSites");
+  setToggle("toggleTouristSpots", "showTouristSpots");
   setToggle("toggleNature", "showNature");
   setToggle("toggleMountains", "showMountains");
   setToggle("toggleRivers", "showRivers");

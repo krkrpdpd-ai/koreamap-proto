@@ -13,6 +13,8 @@
   --mountain: #6f8f54;
   --park: #2f7f4f;
   --field: #c8b05a;
+  --heritage: #d8b36a;
+  --tourism: #69c7b8;
 }
 
 * {
@@ -224,6 +226,20 @@ body {
   background:
     linear-gradient(#f4f1de 0 0) 50% 35% / 10px 5px no-repeat,
     linear-gradient(#d86048 0 0) 50% 72% / 14px 3px no-repeat,
+    #2b7fa0;
+}
+
+.heritage {
+  background:
+    linear-gradient(#7c4d25 0 0) 50% 72% / 14px 4px no-repeat,
+    linear-gradient(var(--heritage) 0 0) 50% 42% / 12px 8px no-repeat,
+    #5f4356;
+}
+
+.tourism {
+  background:
+    linear-gradient(var(--tourism) 0 0) 50% 55% / 14px 8px no-repeat,
+    linear-gradient(#f4f1de 0 0) 50% 35% / 8px 3px no-repeat,
     #2b7fa0;
 }
 

@@ -35,6 +35,11 @@
           <label><input id="toggleSeaRoutes" type="checkbox" checked> 뱃길</label>
         </span>
         <span class="toolbar-group">
+          <label><input id="toggleCultureTourism" type="checkbox" checked> 문화/관광</label>
+          <label><input id="toggleHeritageSites" type="checkbox" checked> 문화유적</label>
+          <label><input id="toggleTouristSpots" type="checkbox" checked> 관광지</label>
+        </span>
+        <span class="toolbar-group">
           <label><input id="toggleNature" type="checkbox" checked> 자연</label>
           <label><input id="toggleMountains" type="checkbox" checked> 산</label>
           <label><input id="toggleRivers" type="checkbox" checked> 강</label>
@@ -69,6 +74,8 @@
           <div><span class="swatch station"></span>철도역</div>
           <div><span class="swatch sea-route"></span>뱃길</div>
           <div><span class="swatch port"></span>항구</div>
+          <div><span class="swatch heritage"></span>문화유적</div>
+          <div><span class="swatch tourism"></span>관광지</div>
           <div><span class="swatch river"></span>강</div>
           <div><span class="swatch park"></span>국립공원</div>
           <div><span class="swatch mountain"></span>대표 산</div>
@@ -88,6 +95,7 @@
     <script src="./src/data/korea-map-data.js"></script>
     <script src="./src/data/real-overlays.js?v=official-rest-areas"></script>
     <script src="./src/data/maritime-data.js?v=ports-routes-clearance"></script>
-    <script src="./src/main.js?v=maritime-overlay" defer></script>
+    <script src="./src/data/culture-tourism-data.js?v=heritage-tourism"></script>
+    <script src="./src/main.js?v=culture-tourism" defer></script>
   </body>
 </html>

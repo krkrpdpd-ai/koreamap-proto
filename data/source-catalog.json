@@ -1,0 +1,117 @@
+{
+  "generatedAt": "2026-05-21",
+  "purpose": "2D pixel-map game prototype source registry for South Korea map overlays.",
+  "downloadStatus": "Visible overlays no longer use Overpass API files. Roads, rivers, railways, populated places, peaks, and landuse-derived field patches use non-Overpass OSM-derived exports or services. Province boundaries use SGIS because a compact non-Overpass OSM admin-boundary export was not available in the current source set.",
+  "sources": [
+    {
+      "id": "sgis-provinces",
+      "name": "SGIS province boundary GeoJSON via statgarten",
+      "url": "https://github.com/statgarten/maps",
+      "type": "public GeoJSON, EPSG:5179 source coordinates",
+      "localFile": "data/geo/sgis-provinces.json",
+      "generatedFile": "src/data/real-overlays.js",
+      "use": "Current province boundary and land fill source."
+    },
+    {
+      "id": "natural-earth-admin0-countries",
+      "name": "Natural Earth Admin 0 Countries 1:10m",
+      "url": "https://github.com/nvkelso/natural-earth-vector/blob/master/geojson/ne_10m_admin_0_countries.geojson",
+      "type": "public country boundary/coastline GeoJSON",
+      "localFile": "data/geo/natural-earth-ne_10m_admin_0_countries.geojson",
+      "generatedFile": "src/data/real-overlays.js",
+      "use": "Country land background for South Korea and North Korea, used to avoid sea fill north of the DMZ while retaining SGIS province boundaries on top."
+    },
+    {
+      "id": "hdx-hotosm-populated-places",
+      "name": "South Korea: Populated Places, OpenStreetMap Export",
+      "url": "https://data.humdata.org/dataset/hotosm_kor_populated_places",
+      "type": "HOT/HDX OSM GeoJSON export",
+      "localFile": "data/geo/hotosm-places/populated_places.geojson",
+      "generatedFile": "src/data/real-overlays.js",
+      "use": "Current city and town point source.",
+      "constraint": "OSM data is ODbL. Keep attribution and license obligations."
+    },
+    {
+      "id": "hdx-hotosm-railways",
+      "name": "South Korea: Railways, OpenStreetMap Export",
+      "url": "https://data.humdata.org/dataset/hotosm_kor_railways",
+      "type": "HOT/HDX OSM GeoJSON export",
+      "localFile": "data/geo/hotosm-railways/railways.geojson",
+      "generatedFile": "src/data/real-overlays.js",
+      "use": "Current rail, subway, and light-rail path source.",
+      "constraint": "OSM data is ODbL. Keep attribution and license obligations."
+    },
+    {
+      "id": "arcgis-osm-highways",
+      "name": "ArcGIS OSM Asia Highways FeatureServer",
+      "url": "https://services-ap1.arcgis.com/iA7fZQOnjY9D67Zx/arcgis/rest/services/OSM_AS_Highways/FeatureServer/0",
+      "type": "public OSM-derived GeoJSON query",
+      "localFile": "data/geo/arcgis-korea-major-roads.geojson",
+      "generatedFile": "src/data/real-overlays.js",
+      "use": "Current major expressway and national-road path source. Query is limited to Korea bbox, OSM highway motorway/trunk/primary, and numbered route refs; build output keeps expressways and national route numbers 1-99.",
+      "constraint": "OSM data is ODbL. Keep attribution and license obligations."
+    },
+    {
+      "id": "arcgis-osm-waterways",
+      "name": "ArcGIS OSM Asia Waterways FeatureServer",
+      "url": "https://services-ap1.arcgis.com/iA7fZQOnjY9D67Zx/ArcGIS/rest/services/OSM_AS_Waterways/FeatureServer/0",
+      "type": "public OSM-derived GeoJSON query",
+      "localFile": "data/geo/arcgis-major-rivers.geojson",
+      "generatedFile": "src/data/real-overlays.js",
+      "use": "Current major river path source. Rendering width uses OSM width tags when available, then named-river and merged-length estimates for stylized display.",
+      "constraint": "OSM data is ODbL. Keep attribution and license obligations."
+    },
+    {
+      "id": "arcgis-osm-peaks",
+      "name": "ArcGIS OSM Asia POIs FeatureServer peak query",
+      "url": "https://services-ap1.arcgis.com/iA7fZQOnjY9D67Zx/arcgis/rest/services/OSM_AS_POIs/FeatureServer/0",
+      "type": "public OSM-derived GeoJSON query",
+      "localFile": "data/geo/arcgis-peaks.geojson",
+      "generatedFile": "src/data/real-overlays.js",
+      "use": "Current mountain peak icons and mountain-range ridge bands.",
+      "constraint": "OSM data is ODbL. Keep attribution and license obligations."
+    },
+    {
+      "id": "arcgis-osm-islands",
+      "name": "ArcGIS OSM Asia POIs FeatureServer island/islet query",
+      "url": "https://services-ap1.arcgis.com/iA7fZQOnjY9D67Zx/arcgis/rest/services/OSM_AS_POIs/FeatureServer/0",
+      "type": "public OSM-derived GeoJSON query with curated coordinate fallbacks",
+      "localFile": "data/geo/arcgis-island-points.geojson",
+      "generatedFile": "src/data/real-overlays.js",
+      "use": "Current major island labels including Ulleungdo and Dokdo.",
+      "constraint": "OSM data is ODbL. Keep attribution and license obligations."
+    },
+    {
+      "id": "arcgis-osm-national-parks",
+      "name": "ArcGIS OSM Asia POIs FeatureServer national park queries",
+      "url": "https://services-ap1.arcgis.com/iA7fZQOnjY9D67Zx/arcgis/rest/services/OSM_AS_POIs/FeatureServer/0",
+      "type": "public OSM-derived GeoJSON query with curated coordinate fallbacks",
+      "localFiles": [
+        "data/geo/arcgis-national-park-points.geojson",
+        "data/geo/arcgis-national-park-name-points.geojson"
+      ],
+      "generatedFile": "src/data/real-overlays.js",
+      "use": "Current national park markers and approximate display patches.",
+      "constraint": "OSM data is ODbL. Keep attribution and license obligations."
+    },
+    {
+      "id": "arcgis-osm-landuse-fields",
+      "name": "ArcGIS OSM Asia Landuse FeatureServer field queries",
+      "url": "https://services-ap1.arcgis.com/iA7fZQOnjY9D67Zx/arcgis/rest/services/OSM_AS_Landuse/FeatureServer/0",
+      "type": "public OSM-derived GeoJSON query",
+      "localFiles": [
+        "data/geo/arcgis-fields-sample.geojson",
+        "data/geo/arcgis-named-fields.geojson"
+      ],
+      "generatedFile": "src/data/real-overlays.js",
+      "use": "Current farmland, meadow, grass, orchard, vineyard, and farmyard density patches.",
+      "constraint": "OSM data is ODbL. Keep attribution and license obligations."
+    }
+  ],
+  "prototypeDataset": {
+    "baseFile": "src/data/korea-map-data.js",
+    "realOverlayFile": "src/data/real-overlays.js",
+    "coordinateSystem": "Downloaded vectors are transformed and simplified into base canvas pixel coordinates by tools/build-real-overlays.js.",
+    "accuracy": "Road, river, railway, populated-place, peak, and landuse overlays are aligned to OSM-derived coordinates. Province boundaries are SGIS-based and may have minor source-to-source differences from OSM transport and natural features. Country land background is Natural Earth Admin 0 and is drawn below the SGIS province layer."
+  }
+}

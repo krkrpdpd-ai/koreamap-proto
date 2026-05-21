@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>한국 도트맵 게임 프로토타입</title>
+    <link rel="stylesheet" href="./styles.css">
+  </head>
+  <body>
+    <header class="topbar">
+      <div>
+        <h1>한국 도트맵</h1>
+        <p>10km 격자 기반 웹 게임 프로토타입</p>
+      </div>
+      <div class="toolbar" aria-label="지도 표시 옵션">
+        <div class="zoom-controls" aria-label="확대 축소">
+          <button id="zoomOut" type="button" title="축소">-</button>
+          <output id="zoomLevel" aria-live="polite">100%</output>
+          <button id="zoomIn" type="button" title="확대">+</button>
+          <button id="zoomReset" type="button" title="기본 배율">1:1</button>
+        </div>
+        <label><input id="toggleRoads" type="checkbox" checked> 도로</label>
+        <label><input id="toggleRailways" type="checkbox" checked> 철도</label>
+        <label><input id="toggleNature" type="checkbox" checked> 자연</label>
+        <label><input id="toggleBoundaries" type="checkbox" checked> 시도 경계</label>
+        <label><input id="toggleLabels" type="checkbox" checked> 라벨</label>
+        <label><input id="toggleGrid" type="checkbox" checked> 격자</label>
+      </div>
+    </header>
+
+    <main class="app-shell">
+      <aside class="side-panel" aria-label="지도 정보">
+        <section>
+          <h2 id="inspectorTitle">서울특별시</h2>
+          <p id="inspectorBody">수도권 중심 도시입니다.</p>
+        </section>
+        <section class="legend">
+          <h2>범례</h2>
+          <div><span class="swatch expressway"></span>고속도로</div>
+          <div><span class="swatch national"></span>국도</div>
+          <div><span class="swatch railway"></span>철도</div>
+          <div><span class="swatch river"></span>강</div>
+          <div><span class="swatch park"></span>국립공원</div>
+          <div><span class="swatch mountain"></span>대표 산</div>
+          <div><span class="swatch boundary"></span>시도 경계</div>
+        </section>
+        <section>
+          <h2>좌표</h2>
+          <p id="positionReadout">126.98E, 37.57N</p>
+        </section>
+      </aside>
+
+      <section class="map-frame" aria-label="스크롤 가능한 도트 지도">
+        <canvas id="mapCanvas"></canvas>
+      </section>
+    </main>
+
+    <script src="./src/data/korea-map-data.js"></script>
+    <script src="./src/data/real-overlays.js"></script>
+    <script src="./src/main.js" defer></script>
+  </body>
+</html>

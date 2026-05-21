@@ -1,0 +1,352 @@
+{
+  "feature_count": 23101,
+  "geometry_types": {
+    "LINESTRING": 21742,
+    "POINT": 1339,
+    "POLYGON": 20
+  },
+  "bbox": [
+    126.3864427,
+    33.4586503,
+    130.7983914,
+    38.6138018
+  ],
+  "columns": [
+    {
+      "name": "id",
+      "type": "VARCHAR",
+      "null_count": 0,
+      "null_percent": 0.0,
+      "distinct_count": 23101,
+      "top_values": []
+    },
+    {
+      "name": "name",
+      "type": "VARCHAR",
+      "null_count": 7978,
+      "null_percent": 34.54,
+      "distinct_count": 1360,
+      "top_values": []
+    },
+    {
+      "name": "name_en",
+      "type": "VARCHAR",
+      "null_count": 8547,
+      "null_percent": 37.0,
+      "distinct_count": 1294,
+      "top_values": []
+    },
+    {
+      "name": "name_ko",
+      "type": "VARCHAR",
+      "null_count": 8374,
+      "null_percent": 36.25,
+      "distinct_count": 1307,
+      "top_values": []
+    },
+    {
+      "name": "railway",
+      "type": "VARCHAR",
+      "null_count": 0,
+      "null_percent": 0.0,
+      "distinct_count": 2,
+      "top_values": [
+        {
+          "value": "rail",
+          "count": 21742
+        },
+        {
+          "value": "station",
+          "count": 1359
+        }
+      ]
+    },
+    {
+      "name": "ele",
+      "type": "VARCHAR",
+      "null_count": 23101,
+      "null_percent": 100.0,
+      "distinct_count": 0,
+      "top_values": []
+    },
+    {
+      "name": "operator_type",
+      "type": "VARCHAR",
+      "null_count": 8008,
+      "null_percent": 34.67,
+      "distinct_count": 3,
+      "top_values": [
+        {
+          "value": "public",
+          "count": 14851
+        },
+        {
+          "value": "consortium",
+          "count": 172
+        },
+        {
+          "value": "private",
+          "count": 70
+        }
+      ]
+    },
+    {
+      "name": "layer",
+      "type": "VARCHAR",
+      "null_count": 16445,
+      "null_percent": 71.19,
+      "distinct_count": 13,
+      "top_values": [
+        {
+          "value": "1",
+          "count": 4569
+        },
+        {
+          "value": "-1",
+          "count": 1330
+        },
+        {
+          "value": "2",
+          "count": 325
+        },
+        {
+          "value": "-2",
+          "count": 141
+        },
+        {
+          "value": "-3",
+          "count": 56
+        }
+      ]
+    },
+    {
+      "name": "addr_full",
+      "type": "VARCHAR",
+      "null_count": 23101,
+      "null_percent": 100.0,
+      "distinct_count": 0,
+      "top_values": []
+    },
+    {
+      "name": "addr_city",
+      "type": "VARCHAR",
+      "null_count": 22780,
+      "null_percent": 98.61,
+      "distinct_count": 59,
+      "top_values": [
+        {
+          "value": "\uc11c\uc6b8\ud2b9\ubcc4\uc2dc",
+          "count": 117
+        },
+        {
+          "value": "\ubd80\uc0b0\uad11\uc5ed\uc2dc",
+          "count": 38
+        },
+        {
+          "value": "\uc778\ucc9c\uad11\uc5ed\uc2dc",
+          "count": 26
+        },
+        {
+          "value": "\uad11\uc8fc\uad11\uc5ed\uc2dc",
+          "count": 16
+        },
+        {
+          "value": "\uace0\uc591\uc2dc",
+          "count": 6
+        }
+      ]
+    },
+    {
+      "name": "source",
+      "type": "VARCHAR",
+      "null_count": 23101,
+      "null_percent": 100.0,
+      "distinct_count": 0,
+      "top_values": []
+    },
+    {
+      "name": "adm0_pcode",
+      "type": "VARCHAR",
+      "null_count": 0,
+      "null_percent": 0.0,
+      "distinct_count": 1,
+      "top_values": [
+        {
+          "value": "KOR",
+          "count": 23101
+        }
+      ]
+    },
+    {
+      "name": "adm0_name",
+      "type": "VARCHAR",
+      "null_count": 0,
+      "null_percent": 0.0,
+      "distinct_count": 1,
+      "top_values": [
+        {
+          "value": "Republic of Korea",
+          "count": 23101
+        }
+      ]
+    },
+    {
+      "name": "adm1_pcode",
+      "type": "VARCHAR",
+      "null_count": 5,
+      "null_percent": 0.02,
+      "distinct_count": 17,
+      "top_values": [
+        {
+          "value": "68945753B43731078897969",
+          "count": 5190
+        },
+        {
+          "value": "68945753B22494711915469",
+          "count": 2869
+        },
+        {
+          "value": "68945753B5424648896322",
+          "count": 2099
+        },
+        {
+          "value": "68945753B59172752195743",
+          "count": 2003
+        },
+        {
+          "value": "68945753B85747362819570",
+          "count": 1964
+        }
+      ]
+    },
+    {
+      "name": "adm1_name",
+      "type": "VARCHAR",
+      "null_count": 5,
+      "null_percent": 0.02,
+      "distinct_count": 17,
+      "top_values": [
+        {
+          "value": "Gyeonggi",
+          "count": 5190
+        },
+        {
+          "value": "North Gyeongsang",
+          "count": 2869
+        },
+        {
+          "value": "South Jeolla",
+          "count": 2099
+        },
+        {
+          "value": "North Chungcheong",
+          "count": 2003
+        },
+        {
+          "value": "Gangwon",
+          "count": 1964
+        }
+      ]
+    },
+    {
+      "name": "adm2_pcode",
+      "type": "VARCHAR",
+      "null_count": 5,
+      "null_percent": 0.02,
+      "distinct_count": 185,
+      "top_values": [
+        {
+          "value": "91817680B58085958229296",
+          "count": 525
+        },
+        {
+          "value": "91817680B27371207272645",
+          "count": 514
+        },
+        {
+          "value": "91817680B38772026787440",
+          "count": 468
+        },
+        {
+          "value": "91817680B29564477042831",
+          "count": 439
+        },
+        {
+          "value": "91817680B5353031397212",
+          "count": 425
+        }
+      ]
+    },
+    {
+      "name": "adm2_name",
+      "type": "VARCHAR",
+      "null_count": 5,
+      "null_percent": 0.02,
+      "distinct_count": 170,
+      "top_values": [
+        {
+          "value": "Hwaseong-si",
+          "count": 525
+        },
+        {
+          "value": "Goyang-si",
+          "count": 514
+        },
+        {
+          "value": "Jung-gu [Central District]",
+          "count": 505
+        },
+        {
+          "value": "Namyangju-si",
+          "count": 468
+        },
+        {
+          "value": "Daedeok-gu",
+          "count": 439
+        }
+      ]
+    },
+    {
+      "name": "adm3_pcode",
+      "type": "VARCHAR",
+      "null_count": 6,
+      "null_percent": 0.03,
+      "distinct_count": 1105,
+      "top_values": []
+    },
+    {
+      "name": "adm3_name",
+      "type": "VARCHAR",
+      "null_count": 6,
+      "null_percent": 0.03,
+      "distinct_count": 1056,
+      "top_values": []
+    },
+    {
+      "name": "adm4_pcode",
+      "type": "VARCHAR",
+      "null_count": 23101,
+      "null_percent": 100.0,
+      "distinct_count": 0,
+      "top_values": []
+    },
+    {
+      "name": "adm4_name",
+      "type": "VARCHAR",
+      "null_count": 23101,
+      "null_percent": 100.0,
+      "distinct_count": 0,
+      "top_values": []
+    },
+    {
+      "name": "name_latin",
+      "type": "VARCHAR",
+      "null_count": 7964,
+      "null_percent": 34.47,
+      "distinct_count": 1389,
+      "top_values": []
+    }
+  ],
+  "summary": "23,101 features. geometry types: 21,742 LINESTRING, 1,339 POINT, 20 POLYGON. 7 of 22 columns are >=50% null (ele, layer, addr_full, addr_city, source, adm4_pcode, adm4_name).",
+  "temporal": null
+}

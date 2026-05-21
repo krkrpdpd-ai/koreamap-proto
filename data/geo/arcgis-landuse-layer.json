@@ -1,0 +1,1582 @@
+{
+  "currentVersion" : 12, 
+  "id" : 0, 
+  "name" : "OSM_AS_Landuse", 
+  "type" : "Feature Layer", 
+  "serviceItemId" : "69ff44dc0a9f4ac49079f8cc4510a411", 
+  "cacheMaxAge" : 900, 
+  "isView" : true, 
+  "isUpdatableView" : true, 
+  "sourceSchemaChangesAllowed" : true, 
+  "displayField" : "name", 
+  "description" : "&lt;span style=\"font-family:&amp;quot;Avenir Next W01&amp;quot;, &amp;quot;Avenir Next W00&amp;quot;, &amp;quot;Avenir Next&amp;quot;, Avenir, &amp;quot;Helvetica Neue&amp;quot;, sans-serif; font-size:16px;\"&gt;This feature layer provides access to OpenStreetMap landuse areas data for Asia, which is updated frequently. Zoom in to medium scales (e.g. 1:80k) to see the features display. Click on layer for popup.&lt;/span&gt;", 
+  "copyrightText" : "© OpenStreetMap contributors", 
+  "defaultVisibility" : true, 
+  "editingInfo" : {
+    "lastEditDate" : 1779296713455, 
+    "schemaLastEditDate" : 1779296713455, 
+    "dataLastEditDate" : 1779296713455
+  }, 
+  "relationships" : [], 
+  "isDataVersioned" : false, 
+  "hasContingentValuesDefinition" : false, 
+  "supportsAppend" : true, 
+  "supportsCalculate" : true, 
+  "supportsASyncCalculate" : true, 
+  "supportsTruncate" : false, 
+  "supportsAttachmentsByUploadId" : true, 
+  "supportsAttachmentsResizing" : true, 
+  "supportsRollbackOnFailureParameter" : true, 
+  "supportsStatistics" : true, 
+  "supportsExceedsLimitStatistics" : true, 
+  "supportsAdvancedQueries" : true, 
+  "supportsValidateSql" : true, 
+  "supportsCoordinatesQuantization" : true, 
+  "supportsLayerOverrides" : true, 
+  "supportsTilesAndBasicQueriesMode" : true, 
+  "supportsFieldDescriptionProperty" : true, 
+  "supportsQuantizationEditMode" : true, 
+  "supportsColumnStoreIndex" : true, 
+  "supportsApplyEditsWithGlobalIds" : false, 
+  "supportsMultiScaleGeometry" : true, 
+  "supportsReturningQueryGeometry" : true, 
+  "enableNullGeometry" : false, 
+  "hasGeometryProperties" : true, 
+  "geometryProperties" : 
+  {
+    "shapeAreaFieldName" : "Shape__Area", 
+    "shapeLengthFieldName" : "Shape__Length", 
+    "units" : "esriMeters"
+  }, 
+  "advancedQueryCapabilities" : {
+    "supportsPagination" : true, 
+    "supportsPaginationOnAggregatedQueries" : true, 
+    "supportsQueryRelatedPagination" : true, 
+    "supportsQueryWithDistance" : true, 
+    "supportsOutDistance" : true, 
+    "supportsReturningQueryExtent" : true, 
+    "supportsStatistics" : true, 
+    "supportsOrderBy" : true, 
+    "supportsDistinct" : true, 
+    "supportsQueryWithResultType" : true, 
+    "supportsSqlExpression" : true, 
+    "supportsTimeRelation" : true, 
+    "supportsAdvancedQueryRelated" : true, 
+    "supportsCountDistinct" : true, 
+    "supportsPercentileStatistics" : true, 
+    "supportsApproxPercentileStatistics" : true, 
+    "supportsSpatialAggregationStatistics" : true, 
+    "supportsTrueCurve" : true, 
+    "supportedSpatialAggregationStatistics" : [
+      "EnvelopeAggregate", 
+      "CentroidAggregate", 
+      "ConvexHullAggregate"
+    ], 
+    "supportsLod" : true, 
+    "supportsQueryWithLodSR" : false, 
+    "supportedLodTypes" : [
+      "geohash"
+    ], 
+    "supportsReturningGeometryCentroid" : true, 
+    "supportsReturningGeometryEnvelope" : true, 
+    "supportsReturningGeometryProperties" : true, 
+    "supportsQueryWithDatumTransformation" : true, 
+    "supportsCurrentUserQueries" : true, 
+    "supportsHavingClause" : true, 
+    "supportsOutFieldSQLExpression" : true, 
+    "supportsMaxRecordCountFactor" : true, 
+    "supportsTopFeaturesQuery" : true, 
+    "supportsDisjointSpatialRel" : true, 
+    "supportsQueryWithCacheHint" : true, 
+    "supportedOperationsWithCacheHint" : [
+      "query", 
+      "queryTopFilter", 
+      "queryAnalytics", 
+      "queryAttachments", 
+      "queryRelated", 
+      "queryBins", 
+      "queryPivot"
+    ], 
+    "supportsQueryAnalytic" : true, 
+    "supportsQueryPivot" : true, 
+    "supportsQueryBins" : true, 
+    "supportsDefaultSR" : true, 
+    "supportsTranslations" : false, 
+    "supportsAggIds" : true, 
+    "supportsQueryWithCollation" : true, 
+    "supportsISODOW" : true, 
+    "supportsISOWeek" : true, 
+    "supportsFullTextSearch" : true, 
+    "fullTextSearchCapabilities" : {
+      "supportsAccentSensitivity" : true, 
+      "supportsStopWords" : true, 
+      "supportsSearchOperator" : true, 
+      "supportsOperator" : true
+    }
+  }, 
+  "advancedQueryAnalyticCapabilities" : {
+    "supportsLinearRegression" : true, 
+    "supportsTrendlineRegression" : true, 
+    "supportsAsync" : true, 
+    "supportsPercentileAnalytic" : true
+  }, 
+  "queryBinsCapabilities" : {
+    "supportsAsync" : true, 
+    "supportsAutoIntervalBin" : true, 
+    "supportsFixedIntervalBin" : true, 
+    "supportsFixedBoundariesBin" : true, 
+    "supportsDateBin" : true, 
+    "supportsClassificationBin" : true, 
+    "supportsStackBy" : true, 
+    "supportsSplitBy" : true, 
+    "supportsFirstDayOfWeek" : true, 
+    "supportsSnapToData" : true, 
+    "supportsReturnFullIntervalBin" : true, 
+    "supportsReturnStackValueRange" : true, 
+    "supportsNormalization" : true, 
+    "supportedStatisticTypes" : [
+      "COUNT", 
+      "SUM", 
+      "AVG", 
+      "VAR", 
+      "STDDEV", 
+      "MIN", 
+      "MAX", 
+      "PERCENTILE_CONT", 
+      "PERCENTILE_DISC", 
+      "APPROX_PERCENTILE_CONT", 
+      "APPROX_PERCENTILE_DISC", 
+      "CentroidAggregate", 
+      "EnvelopeAggregate", 
+      "ConvexHullAggregate"
+    ], 
+    "supportedNormalizationTypes" : [
+      "boxCox", 
+      "field", 
+      "inverse", 
+      "log", 
+      "naturalLog", 
+      "percentOfTotal", 
+      "squareRoot"
+    ]
+  }, 
+  "supportedOperationsWithCollation" : "query,addField,updateField", 
+  "advancedEditingCapabilities" : {
+    "supportedSqlFormatsInCalculate" : [
+      "standard"
+    ], 
+    "supportsAsyncApplyEdits" : true, 
+    "supportsReturnEditResults" : true, 
+    "supportsApplyEditsbyUploadID" : true, 
+    "supportedApplyEditsUploadIDFormats" : "JSON,PBF", 
+    "supportsTranslation" : false, 
+    "supportsMaxTranslations" : 10
+  }, 
+  "infoInEstimates" : [
+    "extent", 
+    "count"
+  ], 
+  "useStandardizedQueries" : true, 
+  "geometryType" : "esriGeometryPolygon", 
+  "minScale" : 109323, 
+  "maxScale" : 0, 
+  "extent" : {
+    "xmin" : -20037508.3428, 
+    "ymin" : -2594613.3030332439, 
+    "xmax" : 20037508.3428, 
+    "ymax" : 17695275.811746337, 
+    "spatialReference" : {
+      "wkid" : 102100, 
+      "latestWkid" : 3857
+    }
+  }, 
+  "spatialReference" : {
+    "wkid" : 102100, 
+    "latestWkid" : 3857
+  }, 
+  "drawingInfo":{"renderer":{"visualVariables":[{"type":"sizeInfo","target":"outline","expression":"view.scale","valueExpression":"$view.scale","stops":[{"size":1.5,"value":1276},{"size":0.75,"value":3986},{"size":0.375,"value":15946},{"size":0,"value":31892}]}],"type":"uniqueValue","field1":"landuse","uniqueValueInfos":[{"value":"residential","symbol":{"color":[255,243,207,255],"outline":{"color":[153,153,153,64],"width":0.75,"type":"esriSLS","style":"esriSLSSolid"},"type":"esriSFS","style":"esriSFSSolid"},"label":"residential"},{"value":"farmland","symbol":{"color":[241,223,183,255],"outline":{"color":[153,153,153,64],"width":0.75,"type":"esriSLS","style":"esriSLSSolid"},"type":"esriSFS","style":"esriSFSSolid"},"label":"farmland"},{"value":"grass","symbol":{"color":[171,214,155,255],"outline":{"color":[153,153,153,64],"width":0.75,"type":"esriSLS","style":"esriSLSSolid"},"type":"esriSFS","style":"esriSFSSolid"},"label":"grass"},{"value":"forest","symbol":{"color":[108,153,91,255],"outline":{"color":[153,153,153,64],"width":0.75,"type":"esriSLS","style":"esriSLSSolid"},"type":"esriSFS","style":"esriSFSSolid"},"label":"forest"},{"value":"industrial","symbol":{"color":[219,211,210,255],"outline":{"color":[153,153,153,64],"width":0.75,"type":"esriSLS","style":"esriSLSSolid"},"type":"esriSFS","style":"esriSFSSolid"},"label":"industrial"},{"value":"orchard","symbol":{"color":[200,220,93,255],"outline":{"color":[153,153,153,64],"width":0.75,"type":"esriSLS","style":"esriSLSSolid"},"type":"esriSFS","style":"esriSFSSolid"},"label":"orchard"},{"value":"meadow","symbol":{"color":[222,231,135,255],"outline":{"color":[153,153,153,64],"width":0.75,"type":"esriSLS","style":"esriSLSSolid"},"type":"esriSFS","style":"esriSFSSolid"},"label":"meadow"},{"value":"farmyard","symbol":{"color":[241,223,183,255],"outline":{"color":[153,153,153,64],"width":0.75,"type":"esriSLS","style":"esriSLSSolid"},"type":"esriSFS","style":"esriSFSSolid"},"label":"farmyard"},{"value":"cemetery","symbol":{"color":[159,188,161,255],"outline":{"color":[153,153,153,64],"width":0.75,"type":"esriSLS","style":"esriSLSSolid"},"type":"esriSFS","style":"esriSFSSolid"},"label":"cemetery"},{"value":"commercial","symbol":{"color":[236,181,174,255],"outline":{"color":[153,153,153,64],"width":0.75,"type":"esriSLS","style":"esriSLSSolid"},"type":"esriSFS","style":"esriSFSSolid"},"label":"commercial"},{"value":"reservoir","symbol":{"color":[157,220,249,255],"outline":{"color":[153,153,153,64],"width":0.75,"type":"esriSLS","style":"esriSLSSolid"},"type":"esriSFS","style":"esriSFSSolid"},"label":"reservoir"},{"value":"allotments","symbol":{"color":[167,198,54,255],"outline":{"color":[153,153,153,64],"width":0.75,"type":"esriSLS","style":"esriSLSSolid"},"type":"esriSFS","style":"esriSFSSolid"},"label":"allotments"},{"value":"logging","symbol":{"color":[182,137,48,255],"outline":{"color":[153,153,153,64],"width":0.75,"type":"esriSLS","style":"esriSLSSolid"},"type":"esriSFS","style":"esriSFSSolid"},"label":"logging"},{"value":"construction","symbol":{"color":[148,140,123,255],"outline":{"color":[153,153,153,64],"width":0.75,"type":"esriSLS","style":"esriSLSSolid"},"type":"esriSFS","style":"esriSFSSolid"},"label":"construction"},{"value":"retail","symbol":{"color":[224,155,144,255],"outline":{"color":[153,153,153,64],"width":0.75,"type":"esriSLS","style":"esriSLSSolid"},"type":"esriSFS","style":"esriSFSSolid"},"label":"retail"},{"value":"basin","symbol":{"color":[157,220,249,255],"outline":{"color":[153,153,153,64],"width":0.75,"type":"esriSLS","style":"esriSLSSolid"},"type":"esriSFS","style":"esriSFSSolid"},"label":"basin"},{"value":"quarry","symbol":{"color":[178,184,175,255],"outline":{"color":[153,153,153,64],"width":0.75,"type":"esriSLS","style":"esriSLSSolid"},"type":"esriSFS","style":"esriSFSSolid"},"label":"quarry"},{"value":"brownfield","symbol":{"color":[183,129,74,255],"outline":{"color":[153,153,153,64],"width":0.75,"type":"esriSLS","style":"esriSLSSolid"},"type":"esriSFS","style":"esriSFSSolid"},"label":"brownfield"},{"value":"garages","symbol":{"color":[133,133,133,255],"outline":{"color":[153,153,153,64],"width":0.75,"type":"esriSLS","style":"esriSLSSolid"},"type":"esriSFS","style":"esriSFSSolid"},"label":"garages"},{"value":"military","symbol":{"color":[92,92,92,255],"outline":{"color":[153,153,153,64],"width":0.75,"type":"esriSLS","style":"esriSLSSolid"},"type":"esriSFS","style":"esriSFSSolid"},"label":"military"}]},"labelingInfo":[{"labelExpression":null,"labelExpressionInfo":{"expression":"$feature[\"name\"]","value":"{name}"},"useCodedValues":true,"maxScale":0,"minScale":11071,"where":null,"labelPlacement":"esriServerPolygonPlacementAlwaysHorizontal","symbol":{"color":[51,51,51,255],"type":"esriTS","backgroundColor":null,"borderLineColor":null,"haloSize":0,"haloColor":null,"horizontalAlignment":"center","rightToLeft":false,"angle":0,"xoffset":0,"yoffset":0,"text":"","rotated":false,"kerning":true,"font":{"size":9,"style":"normal","decoration":"none","weight":"bold","family":"Arial"}}}],"transparency":20}, 
+  "allowGeometryUpdates" : true, 
+  "trueCurveSupportMode" : "OGC", 
+  "supportedCurveTypes" : [
+    "esriGeometryCircularArc"
+  ], 
+  "supportedTrueCurvePbfFeatureEncodings" : [
+    "esriCompressedShapeBuffer", 
+    "esriDefault"
+  ], 
+  "allowTrueCurvesUpdates" : true, 
+  "onlyAllowTrueCurveUpdatesByTrueCurveClients" : true, 
+  "hasAttachments" : false, 
+  "viewSourceHasAttachments" : false, 
+  "htmlPopupType" : "esriServerHTMLPopupTypeAsHTMLText", 
+  "hasMetadata" : true, 
+  "hasM" : false, 
+  "hasZ" : false, 
+  "objectIdField" : "objectid", 
+  "uniqueIdField" : 
+  {
+    "name" : "objectid", 
+    "isSystemMaintained" : true
+  }, 
+  "globalIdField" : "", 
+  "typeIdField" : "landuse", 
+  "collation" : {
+    "locale" : "neutral", 
+    "caseSensitive" : false, 
+    "accentSensitive" : true
+  }, 
+  "fields" : [
+    {
+      "name" : "access", 
+      "type" : "esriFieldTypeString", 
+      "alias" : "access", 
+      "sqlType" : "sqlTypeOther", 
+      "length" : 255, 
+      "nullable" : true, 
+      "editable" : true, 
+      "domain" : null, 
+      "defaultValue" : null
+    }, 
+    {
+      "name" : "addr_city", 
+      "type" : "esriFieldTypeString", 
+      "alias" : "addr_city", 
+      "sqlType" : "sqlTypeOther", 
+      "length" : 255, 
+      "nullable" : true, 
+      "editable" : true, 
+      "domain" : null, 
+      "defaultValue" : null
+    }, 
+    {
+      "name" : "addr_housenumber", 
+      "type" : "esriFieldTypeString", 
+      "alias" : "addr_housenumber", 
+      "sqlType" : "sqlTypeOther", 
+      "length" : 255, 
+      "nullable" : true, 
+      "editable" : true, 
+      "domain" : null, 
+      "defaultValue" : null
+    }, 
+    {
+      "name" : "addr_postcode", 
+      "type" : "esriFieldTypeString", 
+      "alias" : "addr_postcode", 
+      "sqlType" : "sqlTypeOther", 
+      "length" : 255, 
+      "nullable" : true, 
+      "editable" : true, 
+      "domain" : null, 
+      "defaultValue" : null
+    }, 
+    {
+      "name" : "addr_province", 
+      "type" : "esriFieldTypeString", 
+      "alias" : "addr_province", 
+      "sqlType" : "sqlTypeOther", 
+      "length" : 255, 
+      "nullable" : true, 
+      "editable" : true, 
+      "domain" : null, 
+      "defaultValue" : null
+    }, 
+    {
+      "name" : "addr_state", 
+      "type" : "esriFieldTypeString", 
+      "alias" : "addr_state", 
+      "sqlType" : "sqlTypeOther", 
+      "length" : 255, 
+      "nullable" : true, 
+      "editable" : true, 
+      "domain" : null, 
+      "defaultValue" : null
+    }, 
+    {
+      "name" : "addr_street", 
+      "type" : "esriFieldTypeString", 
+      "alias" : "addr_street", 
+      "sqlType" : "sqlTypeOther", 
+      "length" : 255, 
+      "nullable" : true, 
+      "editable" : true, 
+      "domain" : null, 
+      "defaultValue" : null
+    }, 
+    {
+      "name" : "addr_unit", 
+      "type" : "esriFieldTypeString", 
+      "alias" : "addr_unit", 
+      "sqlType" : "sqlTypeOther", 
+      "length" : 255, 
+      "nullable" : true, 
+      "editable" : true, 
+      "domain" : null, 
+      "defaultValue" : null
+    }, 
+    {
+      "name" : "attribution", 
+      "type" : "esriFieldTypeString", 
+      "alias" : "attribution", 
+      "sqlType" : "sqlTypeOther", 
+      "length" : 255, 
+      "nullable" : true, 
+      "editable" : true, 
+      "domain" : null, 
+      "defaultValue" : null
+    }, 
+    {
+      "name" : "barrier", 
+      "type" : "esriFieldTypeString", 
+      "alias" : "barrier", 
+      "sqlType" : "sqlTypeOther", 
+      "length" : 255, 
+      "nullable" : true, 
+      "editable" : true, 
+      "domain" : null, 
+      "defaultValue" : null
+    }, 
+    {
+      "name" : "ele", 
+      "type" : "esriFieldTypeString", 
+      "alias" : "ele", 
+      "sqlType" : "sqlTypeOther", 
+      "length" : 255, 
+      "nullable" : true, 
+      "editable" : true, 
+      "domain" : null, 
+      "defaultValue" : null
+    }, 
+    {
+      "name" : "golf", 
+      "type" : "esriFieldTypeString", 
+      "alias" : "golf", 
+      "sqlType" : "sqlTypeOther", 
+      "length" : 255, 
+      "nullable" : true, 
+      "editable" : true, 
+      "domain" : null, 
+      "defaultValue" : null
+    }, 
+    {
+      "name" : "industrial", 
+      "type" : "esriFieldTypeString", 
+      "alias" : "industrial", 
+      "sqlType" : "sqlTypeOther", 
+      "length" : 255, 
+      "nullable" : true, 
+      "editable" : true, 
+      "domain" : null, 
+      "defaultValue" : null
+    }, 
+    {
+      "name" : "landuse", 
+      "type" : "esriFieldTypeString", 
+      "alias" : "landuse", 
+      "sqlType" : "sqlTypeOther", 
+      "length" : 255, 
+      "nullable" : true, 
+      "editable" : true, 
+      "domain" : null, 
+      "defaultValue" : null
+    }, 
+    {
+      "name" : "leaf_cycle", 
+      "type" : "esriFieldTypeString", 
+      "alias" : "leaf_cycle", 
+      "sqlType" : "sqlTypeOther", 
+      "length" : 255, 
+      "nullable" : true, 
+      "editable" : true, 
+      "domain" : null, 
+      "defaultValue" : null
+    }, 
+    {
+      "name" : "leaf_type", 
+      "type" : "esriFieldTypeString", 
+      "alias" : "leaf_type", 
+      "sqlType" : "sqlTypeOther", 
+      "length" : 255, 
+      "nullable" : true, 
+      "editable" : true, 
+      "domain" : null, 
+      "defaultValue" : null
+    }, 
+    {
+      "name" : "name", 
+      "type" : "esriFieldTypeString", 
+      "alias" : "name", 
+      "sqlType" : "sqlTypeOther", 
+      "length" : 255, 
+      "nullable" : true, 
+      "editable" : true, 
+      "domain" : null, 
+      "defaultValue" : null
+    }, 
+    {
+      "name" : "name_en", 
+      "type" : "esriFieldTypeString", 
+      "alias" : "name_en", 
+      "sqlType" : "sqlTypeOther", 
+      "length" : 255, 
+      "nullable" : true, 
+      "editable" : true, 
+      "domain" : null, 
+      "defaultValue" : null
+    }, 
+    {
+      "name" : "nat", 
+      "type" : "esriFieldTypeString", 
+      "alias" : "nat", 
+      "sqlType" : "sqlTypeOther", 
+      "length" : 255, 
+      "nullable" : true, 
+      "editable" : true, 
+      "domain" : null, 
+      "defaultValue" : null
+    }, 
+    {
+      "name" : "operator", 
+      "type" : "esriFieldTypeString", 
+      "alias" : "operator", 
+      "sqlType" : "sqlTypeOther", 
+      "length" : 255, 
+      "nullable" : true, 
+      "editable" : true, 
+      "domain" : null, 
+      "defaultValue" : null
+    }, 
+    {
+      "name" : "place", 
+      "type" : "esriFieldTypeString", 
+      "alias" : "place", 
+      "sqlType" : "sqlTypeOther", 
+      "length" : 255, 
+      "nullable" : true, 
+      "editable" : true, 
+      "domain" : null, 
+      "defaultValue" : null
+    }, 
+    {
+      "name" : "ref", 
+      "type" : "esriFieldTypeString", 
+      "alias" : "ref", 
+      "sqlType" : "sqlTypeOther", 
+      "length" : 255, 
+      "nullable" : true, 
+      "editable" : true, 
+      "domain" : null, 
+      "defaultValue" : null
+    }, 
+    {
+      "name" : "residential", 
+      "type" : "esriFieldTypeString", 
+      "alias" : "residential", 
+      "sqlType" : "sqlTypeOther", 
+      "length" : 255, 
+      "nullable" : true, 
+      "editable" : true, 
+      "domain" : null, 
+      "defaultValue" : null
+    }, 
+    {
+      "name" : "source_transform", 
+      "type" : "esriFieldTypeString", 
+      "alias" : "source_transform", 
+      "sqlType" : "sqlTypeOther", 
+      "length" : 255, 
+      "nullable" : true, 
+      "editable" : true, 
+      "domain" : null, 
+      "defaultValue" : null
+    }, 
+    {
+      "name" : "source_date", 
+      "type" : "esriFieldTypeString", 
+      "alias" : "source_date", 
+      "sqlType" : "sqlTypeOther", 
+      "length" : 255, 
+      "nullable" : true, 
+      "editable" : true, 
+      "domain" : null, 
+      "defaultValue" : null
+    }, 
+    {
+      "name" : "type", 
+      "type" : "esriFieldTypeString", 
+      "alias" : "type", 
+      "sqlType" : "sqlTypeOther", 
+      "length" : 255, 
+      "nullable" : true, 
+      "editable" : true, 
+      "domain" : null, 
+      "defaultValue" : null
+    }, 
+    {
+      "name" : "website", 
+      "type" : "esriFieldTypeString", 
+      "alias" : "website", 
+      "sqlType" : "sqlTypeOther", 
+      "length" : 255, 
+      "nullable" : true, 
+      "editable" : true, 
+      "domain" : null, 
+      "defaultValue" : null
+    }, 
+    {
+      "name" : "wood", 
+      "type" : "esriFieldTypeString", 
+      "alias" : "wood", 
+      "sqlType" : "sqlTypeOther", 
+      "length" : 255, 
+      "nullable" : true, 
+      "editable" : true, 
+      "domain" : null, 
+      "defaultValue" : null
+    }, 
+    {
+      "name" : "objectid", 
+      "type" : "esriFieldTypeOID", 
+      "alias" : "objectid", 
+      "sqlType" : "sqlTypeOther", 
+      "nullable" : false, 
+      "editable" : false, 
+      "domain" : null, 
+      "defaultValue" : null
+    }, 
+    {
+      "name" : "osm_id2", 
+      "type" : "esriFieldTypeString", 
+      "alias" : "osm_id2", 
+      "sqlType" : "sqlTypeOther", 
+      "length" : 255, 
+      "nullable" : true, 
+      "editable" : true, 
+      "domain" : null, 
+      "defaultValue" : null
+    }
+  ], 
+  "indexes" : [
+    {
+      "name" : "PK__OSM_AS_P__5242E632DE6EE610", 
+      "fields" : "objectid", 
+      "isAscending" : true, 
+      "isUnique" : true, 
+      "description" : "", 
+      "indexType" : "Attribute"
+    }, 
+    {
+      "name" : "user_9.OSM_AS_POLYGONS_OSM_AS_POLYGONS_Shape_sidx", 
+      "fields" : "Shape", 
+      "isAscending" : false, 
+      "isUnique" : false, 
+      "description" : "Shape Index", 
+      "indexType" : "Spatial"
+    }, 
+    {
+      "name" : "osm_id2", 
+      "fields" : "osm_id2", 
+      "isAscending" : false, 
+      "isUnique" : false, 
+      "description" : "", 
+      "indexType" : "Attribute"
+    }, 
+    {
+      "name" : "landuse", 
+      "fields" : "landuse", 
+      "isAscending" : false, 
+      "isUnique" : false, 
+      "description" : "", 
+      "indexType" : "Attribute"
+    }, 
+    {
+      "name" : "nat", 
+      "fields" : "nat", 
+      "isAscending" : false, 
+      "isUnique" : false, 
+      "description" : "", 
+      "indexType" : "Attribute"
+    }
+  ], 
+  "dateFieldsTimeReference" : {
+    "timeZone" : "UTC", 
+    "timeZoneIANA" : "Etc/UTC", 
+    "respectsDaylightSaving" : false
+  }, 
+  "preferredTimeReference" : null, 
+  "types" : [
+    {
+      "id" : "residential", 
+      "name" : "residential", 
+      "domains" : 
+      {
+      }, 
+      "templates" : [
+        {
+          "name" : "residential", 
+          "description" : "", 
+          "drawingTool" : "esriFeatureEditToolNone", 
+          "prototype" : {
+            "attributes" : {
+              "landuse" : "residential", 
+              "access" : null, 
+              "addr_city" : null, 
+              "addr_housenumber" : null, 
+              "addr_postcode" : null, 
+              "addr_province" : null, 
+              "addr_state" : null, 
+              "addr_street" : null, 
+              "addr_unit" : null, 
+              "attribution" : null, 
+              "barrier" : null, 
+              "ele" : null, 
+              "golf" : null, 
+              "industrial" : null, 
+              "leaf_cycle" : null, 
+              "leaf_type" : null, 
+              "name" : null, 
+              "name_en" : null, 
+              "nat" : null, 
+              "operator" : null, 
+              "place" : null, 
+              "ref" : null, 
+              "residential" : null, 
+              "source_transform" : null, 
+              "source_date" : null, 
+              "type" : null, 
+              "website" : null, 
+              "wood" : null, 
+              "osm_id2" : null
+            }
+          }
+        }
+      ]
+    }, 
+    {
+      "id" : "farmland", 
+      "name" : "farmland", 
+      "domains" : 
+      {
+      }, 
+      "templates" : [
+        {
+          "name" : "farmland", 
+          "description" : "", 
+          "drawingTool" : "esriFeatureEditToolNone", 
+          "prototype" : {
+            "attributes" : {
+              "landuse" : "farmland", 
+              "access" : null, 
+              "addr_city" : null, 
+              "addr_housenumber" : null, 
+              "addr_postcode" : null, 
+              "addr_province" : null, 
+              "addr_state" : null, 
+              "addr_street" : null, 
+              "addr_unit" : null, 
+              "attribution" : null, 
+              "barrier" : null, 
+              "ele" : null, 
+              "golf" : null, 
+              "industrial" : null, 
+              "leaf_cycle" : null, 
+              "leaf_type" : null, 
+              "name" : null, 
+              "name_en" : null, 
+              "nat" : null, 
+              "operator" : null, 
+              "place" : null, 
+              "ref" : null, 
+              "residential" : null, 
+              "source_transform" : null, 
+              "source_date" : null, 
+              "type" : null, 
+              "website" : null, 
+              "wood" : null, 
+              "osm_id2" : null
+            }
+          }
+        }
+      ]
+    }, 
+    {
+      "id" : "grass", 
+      "name" : "grass", 
+      "domains" : 
+      {
+      }, 
+      "templates" : [
+        {
+          "name" : "grass", 
+          "description" : "", 
+          "drawingTool" : "esriFeatureEditToolNone", 
+          "prototype" : {
+            "attributes" : {
+              "landuse" : "grass", 
+              "access" : null, 
+              "addr_city" : null, 
+              "addr_housenumber" : null, 
+              "addr_postcode" : null, 
+              "addr_province" : null, 
+              "addr_state" : null, 
+              "addr_street" : null, 
+              "addr_unit" : null, 
+              "attribution" : null, 
+              "barrier" : null, 
+              "ele" : null, 
+              "golf" : null, 
+              "industrial" : null, 
+              "leaf_cycle" : null, 
+              "leaf_type" : null, 
+              "name" : null, 
+              "name_en" : null, 
+              "nat" : null, 
+              "operator" : null, 
+              "place" : null, 
+              "ref" : null, 
+              "residential" : null, 
+              "source_transform" : null, 
+              "source_date" : null, 
+              "type" : null, 
+              "website" : null, 
+              "wood" : null, 
+              "osm_id2" : null
+            }
+          }
+        }
+      ]
+    }, 
+    {
+      "id" : "forest", 
+      "name" : "forest", 
+      "domains" : 
+      {
+      }, 
+      "templates" : [
+        {
+          "name" : "forest", 
+          "description" : "", 
+          "drawingTool" : "esriFeatureEditToolNone", 
+          "prototype" : {
+            "attributes" : {
+              "landuse" : "forest", 
+              "access" : null, 
+              "addr_city" : null, 
+              "addr_housenumber" : null, 
+              "addr_postcode" : null, 
+              "addr_province" : null, 
+              "addr_state" : null, 
+              "addr_street" : null, 
+              "addr_unit" : null, 
+              "attribution" : null, 
+              "barrier" : null, 
+              "ele" : null, 
+              "golf" : null, 
+              "industrial" : null, 
+              "leaf_cycle" : null, 
+              "leaf_type" : null, 
+              "name" : null, 
+              "name_en" : null, 
+              "nat" : null, 
+              "operator" : null, 
+              "place" : null, 
+              "ref" : null, 
+              "residential" : null, 
+              "source_transform" : null, 
+              "source_date" : null, 
+              "type" : null, 
+              "website" : null, 
+              "wood" : null, 
+              "osm_id2" : null
+            }
+          }
+        }
+      ]
+    }, 
+    {
+      "id" : "industrial", 
+      "name" : "industrial", 
+      "domains" : 
+      {
+      }, 
+      "templates" : [
+        {
+          "name" : "industrial", 
+          "description" : "", 
+          "drawingTool" : "esriFeatureEditToolNone", 
+          "prototype" : {
+            "attributes" : {
+              "landuse" : "industrial", 
+              "access" : null, 
+              "addr_city" : null, 
+              "addr_housenumber" : null, 
+              "addr_postcode" : null, 
+              "addr_province" : null, 
+              "addr_state" : null, 
+              "addr_street" : null, 
+              "addr_unit" : null, 
+              "attribution" : null, 
+              "barrier" : null, 
+              "ele" : null, 
+              "golf" : null, 
+              "industrial" : null, 
+              "leaf_cycle" : null, 
+              "leaf_type" : null, 
+              "name" : null, 
+              "name_en" : null, 
+              "nat" : null, 
+              "operator" : null, 
+              "place" : null, 
+              "ref" : null, 
+              "residential" : null, 
+              "source_transform" : null, 
+              "source_date" : null, 
+              "type" : null, 
+              "website" : null, 
+              "wood" : null, 
+              "osm_id2" : null
+            }
+          }
+        }
+      ]
+    }, 
+    {
+      "id" : "orchard", 
+      "name" : "orchard", 
+      "domains" : 
+      {
+      }, 
+      "templates" : [
+        {
+          "name" : "orchard", 
+          "description" : "", 
+          "drawingTool" : "esriFeatureEditToolNone", 
+          "prototype" : {
+            "attributes" : {
+              "landuse" : "orchard", 
+              "access" : null, 
+              "addr_city" : null, 
+              "addr_housenumber" : null, 
+              "addr_postcode" : null, 
+              "addr_province" : null, 
+              "addr_state" : null, 
+              "addr_street" : null, 
+              "addr_unit" : null, 
+              "attribution" : null, 
+              "barrier" : null, 
+              "ele" : null, 
+              "golf" : null, 
+              "industrial" : null, 
+              "leaf_cycle" : null, 
+              "leaf_type" : null, 
+              "name" : null, 
+              "name_en" : null, 
+              "nat" : null, 
+              "operator" : null, 
+              "place" : null, 
+              "ref" : null, 
+              "residential" : null, 
+              "source_transform" : null, 
+              "source_date" : null, 
+              "type" : null, 
+              "website" : null, 
+              "wood" : null, 
+              "osm_id2" : null
+            }
+          }
+        }
+      ]
+    }, 
+    {
+      "id" : "meadow", 
+      "name" : "meadow", 
+      "domains" : 
+      {
+      }, 
+      "templates" : [
+        {
+          "name" : "meadow", 
+          "description" : "", 
+          "drawingTool" : "esriFeatureEditToolNone", 
+          "prototype" : {
+            "attributes" : {
+              "landuse" : "meadow", 
+              "access" : null, 
+              "addr_city" : null, 
+              "addr_housenumber" : null, 
+              "addr_postcode" : null, 
+              "addr_province" : null, 
+              "addr_state" : null, 
+              "addr_street" : null, 
+              "addr_unit" : null, 
+              "attribution" : null, 
+              "barrier" : null, 
+              "ele" : null, 
+              "golf" : null, 
+              "industrial" : null, 
+              "leaf_cycle" : null, 
+              "leaf_type" : null, 
+              "name" : null, 
+              "name_en" : null, 
+              "nat" : null, 
+              "operator" : null, 
+              "place" : null, 
+              "ref" : null, 
+              "residential" : null, 
+              "source_transform" : null, 
+              "source_date" : null, 
+              "type" : null, 
+              "website" : null, 
+              "wood" : null, 
+              "osm_id2" : null
+            }
+          }
+        }
+      ]
+    }, 
+    {
+      "id" : "farmyard", 
+      "name" : "farmyard", 
+      "domains" : 
+      {
+      }, 
+      "templates" : [
+        {
+          "name" : "farmyard", 
+          "description" : "", 
+          "drawingTool" : "esriFeatureEditToolNone", 
+          "prototype" : {
+            "attributes" : {
+              "landuse" : "farmyard", 
+              "access" : null, 
+              "addr_city" : null, 
+              "addr_housenumber" : null, 
+              "addr_postcode" : null, 
+              "addr_province" : null, 
+              "addr_state" : null, 
+              "addr_street" : null, 
+              "addr_unit" : null, 
+              "attribution" : null, 
+              "barrier" : null, 
+              "ele" : null, 
+              "golf" : null, 
+              "industrial" : null, 
+              "leaf_cycle" : null, 
+              "leaf_type" : null, 
+              "name" : null, 
+              "name_en" : null, 
+              "nat" : null, 
+              "operator" : null, 
+              "place" : null, 
+              "ref" : null, 
+              "residential" : null, 
+              "source_transform" : null, 
+              "source_date" : null, 
+              "type" : null, 
+              "website" : null, 
+              "wood" : null, 
+              "osm_id2" : null
+            }
+          }
+        }
+      ]
+    }, 
+    {
+      "id" : "cemetery", 
+      "name" : "cemetery", 
+      "domains" : 
+      {
+      }, 
+      "templates" : [
+        {
+          "name" : "cemetery", 
+          "description" : "", 
+          "drawingTool" : "esriFeatureEditToolNone", 
+          "prototype" : {
+            "attributes" : {
+              "landuse" : "cemetery", 
+              "access" : null, 
+              "addr_city" : null, 
+              "addr_housenumber" : null, 
+              "addr_postcode" : null, 
+              "addr_province" : null, 
+              "addr_state" : null, 
+              "addr_street" : null, 
+              "addr_unit" : null, 
+              "attribution" : null, 
+              "barrier" : null, 
+              "ele" : null, 
+              "golf" : null, 
+              "industrial" : null, 
+              "leaf_cycle" : null, 
+              "leaf_type" : null, 
+              "name" : null, 
+              "name_en" : null, 
+              "nat" : null, 
+              "operator" : null, 
+              "place" : null, 
+              "ref" : null, 
+              "residential" : null, 
+              "source_transform" : null, 
+              "source_date" : null, 
+              "type" : null, 
+              "website" : null, 
+              "wood" : null, 
+              "osm_id2" : null
+            }
+          }
+        }
+      ]
+    }, 
+    {
+      "id" : "commercial", 
+      "name" : "commercial", 
+      "domains" : 
+      {
+      }, 
+      "templates" : [
+        {
+          "name" : "commercial", 
+          "description" : "", 
+          "drawingTool" : "esriFeatureEditToolNone", 
+          "prototype" : {
+            "attributes" : {
+              "landuse" : "commercial", 
+              "access" : null, 
+              "addr_city" : null, 
+              "addr_housenumber" : null, 
+              "addr_postcode" : null, 
+              "addr_province" : null, 
+              "addr_state" : null, 
+              "addr_street" : null, 
+              "addr_unit" : null, 
+              "attribution" : null, 
+              "barrier" : null, 
+              "ele" : null, 
+              "golf" : null, 
+              "industrial" : null, 
+              "leaf_cycle" : null, 
+              "leaf_type" : null, 
+              "name" : null, 
+              "name_en" : null, 
+              "nat" : null, 
+              "operator" : null, 
+              "place" : null, 
+              "ref" : null, 
+              "residential" : null, 
+              "source_transform" : null, 
+              "source_date" : null, 
+              "type" : null, 
+              "website" : null, 
+              "wood" : null, 
+              "osm_id2" : null
+            }
+          }
+        }
+      ]
+    }, 
+    {
+      "id" : "reservoir", 
+      "name" : "reservoir", 
+      "domains" : 
+      {
+      }, 
+      "templates" : [
+        {
+          "name" : "reservoir", 
+          "description" : "", 
+          "drawingTool" : "esriFeatureEditToolNone", 
+          "prototype" : {
+            "attributes" : {
+              "landuse" : "reservoir", 
+              "access" : null, 
+              "addr_city" : null, 
+              "addr_housenumber" : null, 
+              "addr_postcode" : null, 
+              "addr_province" : null, 
+              "addr_state" : null, 
+              "addr_street" : null, 
+              "addr_unit" : null, 
+              "attribution" : null, 
+              "barrier" : null, 
+              "ele" : null, 
+              "golf" : null, 
+              "industrial" : null, 
+              "leaf_cycle" : null, 
+              "leaf_type" : null, 
+              "name" : null, 
+              "name_en" : null, 
+              "nat" : null, 
+              "operator" : null, 
+              "place" : null, 
+              "ref" : null, 
+              "residential" : null, 
+              "source_transform" : null, 
+              "source_date" : null, 
+              "type" : null, 
+              "website" : null, 
+              "wood" : null, 
+              "osm_id2" : null
+            }
+          }
+        }
+      ]
+    }, 
+    {
+      "id" : "allotments", 
+      "name" : "allotments", 
+      "domains" : 
+      {
+      }, 
+      "templates" : [
+        {
+          "name" : "allotments", 
+          "description" : "", 
+          "drawingTool" : "esriFeatureEditToolNone", 
+          "prototype" : {
+            "attributes" : {
+              "landuse" : "allotments", 
+              "access" : null, 
+              "addr_city" : null, 
+              "addr_housenumber" : null, 
+              "addr_postcode" : null, 
+              "addr_province" : null, 
+              "addr_state" : null, 
+              "addr_street" : null, 
+              "addr_unit" : null, 
+              "attribution" : null, 
+              "barrier" : null, 
+              "ele" : null, 
+              "golf" : null, 
+              "industrial" : null, 
+              "leaf_cycle" : null, 
+              "leaf_type" : null, 
+              "name" : null, 
+              "name_en" : null, 
+              "nat" : null, 
+              "operator" : null, 
+              "place" : null, 
+              "ref" : null, 
+              "residential" : null, 
+              "source_transform" : null, 
+              "source_date" : null, 
+              "type" : null, 
+              "website" : null, 
+              "wood" : null, 
+              "osm_id2" : null
+            }
+          }
+        }
+      ]
+    }, 
+    {
+      "id" : "logging", 
+      "name" : "logging", 
+      "domains" : 
+      {
+      }, 
+      "templates" : [
+        {
+          "name" : "logging", 
+          "description" : "", 
+          "drawingTool" : "esriFeatureEditToolNone", 
+          "prototype" : {
+            "attributes" : {
+              "landuse" : "logging", 
+              "access" : null, 
+              "addr_city" : null, 
+              "addr_housenumber" : null, 
+              "addr_postcode" : null, 
+              "addr_province" : null, 
+              "addr_state" : null, 
+              "addr_street" : null, 
+              "addr_unit" : null, 
+              "attribution" : null, 
+              "barrier" : null, 
+              "ele" : null, 
+              "golf" : null, 
+              "industrial" : null, 
+              "leaf_cycle" : null, 
+              "leaf_type" : null, 
+              "name" : null, 
+              "name_en" : null, 
+              "nat" : null, 
+              "operator" : null, 
+              "place" : null, 
+              "ref" : null, 
+              "residential" : null, 
+              "source_transform" : null, 
+              "source_date" : null, 
+              "type" : null, 
+              "website" : null, 
+              "wood" : null, 
+              "osm_id2" : null
+            }
+          }
+        }
+      ]
+    }, 
+    {
+      "id" : "construction", 
+      "name" : "construction", 
+      "domains" : 
+      {
+      }, 
+      "templates" : [
+        {
+          "name" : "construction", 
+          "description" : "", 
+          "drawingTool" : "esriFeatureEditToolNone", 
+          "prototype" : {
+            "attributes" : {
+              "landuse" : "construction", 
+              "access" : null, 
+              "addr_city" : null, 
+              "addr_housenumber" : null, 
+              "addr_postcode" : null, 
+              "addr_province" : null, 
+              "addr_state" : null, 
+              "addr_street" : null, 
+              "addr_unit" : null, 
+              "attribution" : null, 
+              "barrier" : null, 
+              "ele" : null, 
+              "golf" : null, 
+              "industrial" : null, 
+              "leaf_cycle" : null, 
+              "leaf_type" : null, 
+              "name" : null, 
+              "name_en" : null, 
+              "nat" : null, 
+              "operator" : null, 
+              "place" : null, 
+              "ref" : null, 
+              "residential" : null, 
+              "source_transform" : null, 
+              "source_date" : null, 
+              "type" : null, 
+              "website" : null, 
+              "wood" : null, 
+              "osm_id2" : null
+            }
+          }
+        }
+      ]
+    }, 
+    {
+      "id" : "retail", 
+      "name" : "retail", 
+      "domains" : 
+      {
+      }, 
+      "templates" : [
+        {
+          "name" : "retail", 
+          "description" : "", 
+          "drawingTool" : "esriFeatureEditToolNone", 
+          "prototype" : {
+            "attributes" : {
+              "landuse" : "retail", 
+              "access" : null, 
+              "addr_city" : null, 
+              "addr_housenumber" : null, 
+              "addr_postcode" : null, 
+              "addr_province" : null, 
+              "addr_state" : null, 
+              "addr_street" : null, 
+              "addr_unit" : null, 
+              "attribution" : null, 
+              "barrier" : null, 
+              "ele" : null, 
+              "golf" : null, 
+              "industrial" : null, 
+              "leaf_cycle" : null, 
+              "leaf_type" : null, 
+              "name" : null, 
+              "name_en" : null, 
+              "nat" : null, 
+              "operator" : null, 
+              "place" : null, 
+              "ref" : null, 
+              "residential" : null, 
+              "source_transform" : null, 
+              "source_date" : null, 
+              "type" : null, 
+              "website" : null, 
+              "wood" : null, 
+              "osm_id2" : null
+            }
+          }
+        }
+      ]
+    }, 
+    {
+      "id" : "basin", 
+      "name" : "basin", 
+      "domains" : 
+      {
+      }, 
+      "templates" : [
+        {
+          "name" : "basin", 
+          "description" : "", 
+          "drawingTool" : "esriFeatureEditToolNone", 
+          "prototype" : {
+            "attributes" : {
+              "landuse" : "basin", 
+              "access" : null, 
+              "addr_city" : null, 
+              "addr_housenumber" : null, 
+              "addr_postcode" : null, 
+              "addr_province" : null, 
+              "addr_state" : null, 
+              "addr_street" : null, 
+              "addr_unit" : null, 
+              "attribution" : null, 
+              "barrier" : null, 
+              "ele" : null, 
+              "golf" : null, 
+              "industrial" : null, 
+              "leaf_cycle" : null, 
+              "leaf_type" : null, 
+              "name" : null, 
+              "name_en" : null, 
+              "nat" : null, 
+              "operator" : null, 
+              "place" : null, 
+              "ref" : null, 
+              "residential" : null, 
+              "source_transform" : null, 
+              "source_date" : null, 
+              "type" : null, 
+              "website" : null, 
+              "wood" : null, 
+              "osm_id2" : null
+            }
+          }
+        }
+      ]
+    }, 
+    {
+      "id" : "quarry", 
+      "name" : "quarry", 
+      "domains" : 
+      {
+      }, 
+      "templates" : [
+        {
+          "name" : "quarry", 
+          "description" : "", 
+          "drawingTool" : "esriFeatureEditToolNone", 
+          "prototype" : {
+            "attributes" : {
+              "landuse" : "quarry", 
+              "access" : null, 
+              "addr_city" : null, 
+              "addr_housenumber" : null, 
+              "addr_postcode" : null, 
+              "addr_province" : null, 
+              "addr_state" : null, 
+              "addr_street" : null, 
+              "addr_unit" : null, 
+              "attribution" : null, 
+              "barrier" : null, 
+              "ele" : null, 
+              "golf" : null, 
+              "industrial" : null, 
+              "leaf_cycle" : null, 
+              "leaf_type" : null, 
+              "name" : null, 
+              "name_en" : null, 
+              "nat" : null, 
+              "operator" : null, 
+              "place" : null, 
+              "ref" : null, 
+              "residential" : null, 
+              "source_transform" : null, 
+              "source_date" : null, 
+              "type" : null, 
+              "website" : null, 
+              "wood" : null, 
+              "osm_id2" : null
+            }
+          }
+        }
+      ]
+    }, 
+    {
+      "id" : "brownfield", 
+      "name" : "brownfield", 
+      "domains" : 
+      {
+      }, 
+      "templates" : [
+        {
+          "name" : "brownfield", 
+          "description" : "", 
+          "drawingTool" : "esriFeatureEditToolNone", 
+          "prototype" : {
+            "attributes" : {
+              "landuse" : "brownfield", 
+              "access" : null, 
+              "addr_city" : null, 
+              "addr_housenumber" : null, 
+              "addr_postcode" : null, 
+              "addr_province" : null, 
+              "addr_state" : null, 
+              "addr_street" : null, 
+              "addr_unit" : null, 
+              "attribution" : null, 
+              "barrier" : null, 
+              "ele" : null, 
+              "golf" : null, 
+              "industrial" : null, 
+              "leaf_cycle" : null, 
+              "leaf_type" : null, 
+              "name" : null, 
+              "name_en" : null, 
+              "nat" : null, 
+              "operator" : null, 
+              "place" : null, 
+              "ref" : null, 
+              "residential" : null, 
+              "source_transform" : null, 
+              "source_date" : null, 
+              "type" : null, 
+              "website" : null, 
+              "wood" : null, 
+              "osm_id2" : null
+            }
+          }
+        }
+      ]
+    }, 
+    {
+      "id" : "garages", 
+      "name" : "garages", 
+      "domains" : 
+      {
+      }, 
+      "templates" : [
+        {
+          "name" : "garages", 
+          "description" : "", 
+          "drawingTool" : "esriFeatureEditToolNone", 
+          "prototype" : {
+            "attributes" : {
+              "landuse" : "garages", 
+              "access" : null, 
+              "addr_city" : null, 
+              "addr_housenumber" : null, 
+              "addr_postcode" : null, 
+              "addr_province" : null, 
+              "addr_state" : null, 
+              "addr_street" : null, 
+              "addr_unit" : null, 
+              "attribution" : null, 
+              "barrier" : null, 
+              "ele" : null, 
+              "golf" : null, 
+              "industrial" : null, 
+              "leaf_cycle" : null, 
+              "leaf_type" : null, 
+              "name" : null, 
+              "name_en" : null, 
+              "nat" : null, 
+              "operator" : null, 
+              "place" : null, 
+              "ref" : null, 
+              "residential" : null, 
+              "source_transform" : null, 
+              "source_date" : null, 
+              "type" : null, 
+              "website" : null, 
+              "wood" : null, 
+              "osm_id2" : null
+            }
+          }
+        }
+      ]
+    }, 
+    {
+      "id" : "military", 
+      "name" : "military", 
+      "domains" : 
+      {
+      }, 
+      "templates" : [
+        {
+          "name" : "military", 
+          "description" : "", 
+          "drawingTool" : "esriFeatureEditToolNone", 
+          "prototype" : {
+            "attributes" : {
+              "landuse" : "military", 
+              "access" : null, 
+              "addr_city" : null, 
+              "addr_housenumber" : null, 
+              "addr_postcode" : null, 
+              "addr_province" : null, 
+              "addr_state" : null, 
+              "addr_street" : null, 
+              "addr_unit" : null, 
+              "attribution" : null, 
+              "barrier" : null, 
+              "ele" : null, 
+              "golf" : null, 
+              "industrial" : null, 
+              "leaf_cycle" : null, 
+              "leaf_type" : null, 
+              "name" : null, 
+              "name_en" : null, 
+              "nat" : null, 
+              "operator" : null, 
+              "place" : null, 
+              "ref" : null, 
+              "residential" : null, 
+              "source_transform" : null, 
+              "source_date" : null, 
+              "type" : null, 
+              "website" : null, 
+              "wood" : null, 
+              "osm_id2" : null
+            }
+          }
+        }
+      ]
+    }
+  ], 
+  "templates" : [], 
+  "supportedQueryFormats" : "JSON, geoJSON, PBF", 
+  "supportedAppendFormats" : "sqlite,geoPackage,shapefile,filegdb,featureCollection,geojson,csv,excel,jsonl,featureService,pbf", 
+  "supportedAppendSourceFilterFormats" : "sqlite,geoPackage,shapefile,filegdb,featureService", 
+  "supportedExportFormats" : "csv,shapefile,sqlite,geoPackage,filegdb,featureCollection,geojson,kml,excel", 
+  "supportedConvertFileFormats" : "JSON,PBF", 
+  "supportedConvertContentFormats" : "LayerEditCollection,FeatureCollection", 
+  "supportedSpatialRelationships" : [
+    "esriSpatialRelIntersects", 
+    "esriSpatialRelContains", 
+    "esriSpatialRelCrosses", 
+    "esriSpatialRelEnvelopeIntersects", 
+    "esriSpatialRelIndexIntersects", 
+    "esriSpatialRelOverlaps", 
+    "esriSpatialRelTouches", 
+    "esriSpatialRelWithin", 
+    "esriSpatialRelDisjoint", 
+    "esriSpatialRelRelation"
+  ], 
+  "guidFormat" : "", 
+  "supportsContingentValues" : true, 
+  "supportedContingentValuesFormats" : "JSON, PBF", 
+  "supportsFieldGroups" : true, 
+  "supportedSyncDataOptions" : 260, 
+  "hasStaticData" : true, 
+  "maxRecordCount" : 2000, 
+  "standardMaxRecordCount" : 2000, 
+  "standardMaxRecordCountNoGeometry" : 32000, 
+  "tileMaxRecordCount" : 4000, 
+  "maxRecordCountFactor" : 1, 
+  "capabilities" : "Query", 
+  "viewDefinitionQuery" : "landuse IS NOT NULL", 
+  "definitionQuery" : "landuse IS NOT NULL"
+}

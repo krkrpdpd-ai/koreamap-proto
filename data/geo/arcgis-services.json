@@ -1,0 +1,155 @@
+{
+  "currentVersion" : 12, 
+  "services" : [
+    {
+      "name" : "LINZ_buildings_v2", 
+      "type" : "FeatureServer", 
+      "url" : "https://services-ap1.arcgis.com/iA7fZQOnjY9D67Zx/ArcGIS/rest/services/LINZ_buildings_v2/FeatureServer"
+    }, 
+    {
+      "name" : "LINZ_NZ_Buildings", 
+      "type" : "FeatureServer", 
+      "url" : "https://services-ap1.arcgis.com/iA7fZQOnjY9D67Zx/ArcGIS/rest/services/LINZ_NZ_Buildings/FeatureServer"
+    }, 
+    {
+      "name" : "NZ_Buildings_(Test)", 
+      "type" : "FeatureServer", 
+      "url" : "https://services-ap1.arcgis.com/iA7fZQOnjY9D67Zx/ArcGIS/rest/services/NZ_Buildings_(Test)/FeatureServer"
+    }, 
+    {
+      "name" : "OSM_AN_Natural", 
+      "type" : "FeatureServer", 
+      "url" : "https://services-ap1.arcgis.com/iA7fZQOnjY9D67Zx/ArcGIS/rest/services/OSM_AN_Natural/FeatureServer"
+    }, 
+    {
+      "name" : "OSM_AN_Natural_Areas", 
+      "type" : "FeatureServer", 
+      "url" : "https://services-ap1.arcgis.com/iA7fZQOnjY9D67Zx/ArcGIS/rest/services/OSM_AN_Natural_Areas/FeatureServer"
+    }, 
+    {
+      "name" : "OSM_AN_Regions", 
+      "type" : "FeatureServer", 
+      "url" : "https://services-ap1.arcgis.com/iA7fZQOnjY9D67Zx/ArcGIS/rest/services/OSM_AN_Regions/FeatureServer"
+    }, 
+    {
+      "name" : "OSM_AS_Amenities", 
+      "type" : "FeatureServer", 
+      "url" : "https://services-ap1.arcgis.com/iA7fZQOnjY9D67Zx/ArcGIS/rest/services/OSM_AS_Amenities/FeatureServer"
+    }, 
+    {
+      "name" : "OSM_AS_Buildings", 
+      "type" : "FeatureServer", 
+      "url" : "https://services-ap1.arcgis.com/iA7fZQOnjY9D67Zx/ArcGIS/rest/services/OSM_AS_Buildings/FeatureServer"
+    }, 
+    {
+      "name" : "OSM_AS_Educational", 
+      "type" : "FeatureServer", 
+      "url" : "https://services-ap1.arcgis.com/iA7fZQOnjY9D67Zx/ArcGIS/rest/services/OSM_AS_Educational/FeatureServer"
+    }, 
+    {
+      "name" : "OSM_AS_Highways", 
+      "type" : "FeatureServer", 
+      "url" : "https://services-ap1.arcgis.com/iA7fZQOnjY9D67Zx/ArcGIS/rest/services/OSM_AS_Highways/FeatureServer"
+    }, 
+    {
+      "name" : "OSM_AS_Landuse", 
+      "type" : "FeatureServer", 
+      "url" : "https://services-ap1.arcgis.com/iA7fZQOnjY9D67Zx/ArcGIS/rest/services/OSM_AS_Landuse/FeatureServer"
+    }, 
+    {
+      "name" : "OSM_AS_Leisure", 
+      "type" : "FeatureServer", 
+      "url" : "https://services-ap1.arcgis.com/iA7fZQOnjY9D67Zx/ArcGIS/rest/services/OSM_AS_Leisure/FeatureServer"
+    }, 
+    {
+      "name" : "OSM_AS_Medical", 
+      "type" : "FeatureServer", 
+      "url" : "https://services-ap1.arcgis.com/iA7fZQOnjY9D67Zx/ArcGIS/rest/services/OSM_AS_Medical/FeatureServer"
+    }, 
+    {
+      "name" : "OSM_AS_Medical_Areas", 
+      "type" : "FeatureServer", 
+      "url" : "https://services-ap1.arcgis.com/iA7fZQOnjY9D67Zx/ArcGIS/rest/services/OSM_AS_Medical_Areas/FeatureServer"
+    }, 
+    {
+      "name" : "OSM_AS_POIs", 
+      "type" : "FeatureServer", 
+      "url" : "https://services-ap1.arcgis.com/iA7fZQOnjY9D67Zx/ArcGIS/rest/services/OSM_AS_POIs/FeatureServer"
+    }, 
+    {
+      "name" : "OSM_AS_Shops", 
+      "type" : "FeatureServer", 
+      "url" : "https://services-ap1.arcgis.com/iA7fZQOnjY9D67Zx/ArcGIS/rest/services/OSM_AS_Shops/FeatureServer"
+    }, 
+    {
+      "name" : "OSM_AS_Tourism", 
+      "type" : "FeatureServer", 
+      "url" : "https://services-ap1.arcgis.com/iA7fZQOnjY9D67Zx/ArcGIS/rest/services/OSM_AS_Tourism/FeatureServer"
+    }, 
+    {
+      "name" : "OSM_AS_Waterways", 
+      "type" : "FeatureServer", 
+      "url" : "https://services-ap1.arcgis.com/iA7fZQOnjY9D67Zx/ArcGIS/rest/services/OSM_AS_Waterways/FeatureServer"
+    }, 
+    {
+      "name" : "OSM_AU_Amenities", 
+      "type" : "FeatureServer", 
+      "url" : "https://services-ap1.arcgis.com/iA7fZQOnjY9D67Zx/ArcGIS/rest/services/OSM_AU_Amenities/FeatureServer"
+    }, 
+    {
+      "name" : "OSM_AU_Buildings", 
+      "type" : "FeatureServer", 
+      "url" : "https://services-ap1.arcgis.com/iA7fZQOnjY9D67Zx/ArcGIS/rest/services/OSM_AU_Buildings/FeatureServer"
+    }, 
+    {
+      "name" : "OSM_AU_Educational", 
+      "type" : "FeatureServer", 
+      "url" : "https://services-ap1.arcgis.com/iA7fZQOnjY9D67Zx/ArcGIS/rest/services/OSM_AU_Educational/FeatureServer"
+    }, 
+    {
+      "name" : "OSM_AU_Highways", 
+      "type" : "FeatureServer", 
+      "url" : "https://services-ap1.arcgis.com/iA7fZQOnjY9D67Zx/ArcGIS/rest/services/OSM_AU_Highways/FeatureServer"
+    }, 
+    {
+      "name" : "OSM_AU_Landuse", 
+      "type" : "FeatureServer", 
+      "url" : "https://services-ap1.arcgis.com/iA7fZQOnjY9D67Zx/ArcGIS/rest/services/OSM_AU_Landuse/FeatureServer"
+    }, 
+    {
+      "name" : "OSM_AU_Leisure", 
+      "type" : "FeatureServer", 
+      "url" : "https://services-ap1.arcgis.com/iA7fZQOnjY9D67Zx/ArcGIS/rest/services/OSM_AU_Leisure/FeatureServer"
+    }, 
+    {
+      "name" : "OSM_AU_Medical", 
+      "type" : "FeatureServer", 
+      "url" : "https://services-ap1.arcgis.com/iA7fZQOnjY9D67Zx/ArcGIS/rest/services/OSM_AU_Medical/FeatureServer"
+    }, 
+    {
+      "name" : "OSM_AU_Medical_Areas", 
+      "type" : "FeatureServer", 
+      "url" : "https://services-ap1.arcgis.com/iA7fZQOnjY9D67Zx/ArcGIS/rest/services/OSM_AU_Medical_Areas/FeatureServer"
+    }, 
+    {
+      "name" : "OSM_AU_POIs", 
+      "type" : "FeatureServer", 
+      "url" : "https://services-ap1.arcgis.com/iA7fZQOnjY9D67Zx/ArcGIS/rest/services/OSM_AU_POIs/FeatureServer"
+    }, 
+    {
+      "name" : "OSM_AU_Shops", 
+      "type" : "FeatureServer", 
+      "url" : "https://services-ap1.arcgis.com/iA7fZQOnjY9D67Zx/ArcGIS/rest/services/OSM_AU_Shops/FeatureServer"
+    }, 
+    {
+      "name" : "OSM_AU_Tourism", 
+      "type" : "FeatureServer", 
+      "url" : "https://services-ap1.arcgis.com/iA7fZQOnjY9D67Zx/ArcGIS/rest/services/OSM_AU_Tourism/FeatureServer"
+    }, 
+    {
+      "name" : "OSM_AU_Waterways", 
+      "type" : "FeatureServer", 
+      "url" : "https://services-ap1.arcgis.com/iA7fZQOnjY9D67Zx/ArcGIS/rest/services/OSM_AU_Waterways/FeatureServer"
+    }
+  ]
+}

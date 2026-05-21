@@ -175,6 +175,14 @@
     dokdo: "동해의 섬으로, 바위섬 지형과 해양 생태 가치가 큽니다."
   };
 
+  const lakeDetails = {
+    soyang: "강원 내륙의 큰 인공호로 산악 지형과 넓은 수면이 어우러진 지역입니다.",
+    chungju: "남한강 수계의 대형 호수로 충북 내륙 이동과 수변 지형 표현에 어울립니다.",
+    daecheong: "금강 수계의 주요 호수로 대전, 청주권의 상수원과 수변 지형을 나타냅니다.",
+    andong: "낙동강 상류의 큰 호수로 경북 북부 산지와 강줄기 흐름을 보여줍니다.",
+    jinyang: "진주 인근의 호수로 남강 수계와 서부 경남의 수변 지형을 표현합니다."
+  };
+
   const selectableIslands = buildSelectableIslands();
 
   function buildSelectableIslands() {
@@ -475,7 +483,12 @@
     target.lineCap = "round";
 
     for (const park of real.nationalParks) {
-      if (state.zoom >= 1.1 || park.labelWeight <= 2) {
+      if (park === state.selectedPlace || park === state.hoverPlace) {
+        const markerSize = 36 / state.zoom;
+        target.fillStyle = park === state.selectedPlace ? palette.selected : "#bdf3ff";
+        target.fillRect(Math.round(park.point[0] - markerSize / 2), Math.round(park.point[1] - markerSize / 2), markerSize, markerSize);
+      }
+      if (isNationalParkVisible(park)) {
         drawIcon(target, "park", park.point[0], park.point[1], 0.76, true);
       }
       if (state.showLabels && labels < 18 && park.labelWeight <= (state.zoom >= 1.35 ? 4 : 2)) {
@@ -485,6 +498,10 @@
     }
 
     target.restore();
+  }
+
+  function isNationalParkVisible(park) {
+    return state.zoom >= 1.1 || park.labelWeight <= 2;
   }
 
   function drawRealMountainRanges(target) {
@@ -613,10 +630,12 @@
     target.lineCap = "round";
 
     for (const road of roads) {
-      if (state.zoom < 1.05 && road.class === "national" && road.length < 35000) continue;
-      if (state.zoom < 1.35 && road.class === "national" && road.length < 12000) continue;
+      if (!isRoadVisible(road)) continue;
       const color = road.class === "expressway" ? palette.expressway : palette.national;
       drawWorldStroke(target, road.path, color, road.class === "expressway" ? 4.2 : 2.8, true);
+      if (road === state.selectedPlace || road === state.hoverPlace) {
+        drawWorldStroke(target, road.path, road === state.selectedPlace ? palette.selected : "#bdf3ff", road.class === "expressway" ? 6.4 : 4.8, true);
+      }
 
       if (state.showLabels && road.name && labelCount < 28 && road.length > 9000 && !labeled.has(road.name)) {
         if (road.class === "national" && state.zoom < 1.35) continue;
@@ -629,6 +648,12 @@
     target.restore();
   }
 
+  function isRoadVisible(road) {
+    if (state.zoom < 1.05 && road.class === "national" && road.length < 35000) return false;
+    if (state.zoom < 1.35 && road.class === "national" && road.length < 12000) return false;
+    return true;
+  }
+
   function drawRealRivers(target) {
     const labeled = new Set();
 
@@ -638,6 +663,9 @@
 
     for (const river of real.rivers) {
       drawWorldStroke(target, river.path, palette.river, river.displayWidth || 4, true);
+      if (river === state.selectedPlace || river === state.hoverPlace) {
+        drawWorldStroke(target, river.path, river === state.selectedPlace ? palette.selected : "#bdf3ff", (river.displayWidth || 4) + 3, true);
+      }
 
       if (state.showLabels && river.name && river.length > 12000 && !labeled.has(river.name)) {
         const p = river.path[Math.floor(river.path.length / 2)];
@@ -656,6 +684,9 @@
     const rails = real.railways.filter(isMajorRailway);
     for (const rail of rails) {
       drawWorldStroke(target, rail.path, palette.rail, 2.6, true);
+      if (rail === state.selectedPlace || rail === state.hoverPlace) {
+        drawWorldStroke(target, rail.path, rail === state.selectedPlace ? palette.selected : "#bdf3ff", 5, true);
+      }
     }
 
     target.restore();
@@ -710,6 +741,11 @@
   function drawPointFeatures(target, list, scale) {
     for (const feature of list) {
       const p = toWorld([feature.lon, feature.lat]);
+      if (feature === state.selectedPlace || feature === state.hoverPlace) {
+        const markerSize = 34 / state.zoom;
+        target.fillStyle = feature === state.selectedPlace ? palette.selected : "#bdf3ff";
+        target.fillRect(Math.round(p.x - markerSize / 2), Math.round(p.y - markerSize / 2), markerSize, markerSize);
+      }
       drawIcon(target, feature.icon, p.x, p.y, scale);
       if (state.showLabels) drawLabel(target, feature.name, p.x + 14, p.y + 5, 11);
     }
@@ -1243,6 +1279,43 @@
 
   function updateInspector(place) {
     state.selectedPlace = place;
+    if (place.type === "road") {
+      inspectorTitle.textContent = place.name;
+      const roadType = place.class === "expressway" ? "고속도로" : "국도";
+      inspectorBody.textContent = `${roadType}. OSM 기반 도로 경로이며, 현재 지도에는 약 ${formatKm(place.lengthKm)} 구간으로 표시됩니다.`;
+      state.staticDirty = true;
+      return;
+    }
+
+    if (place.type === "river") {
+      inspectorTitle.textContent = place.name;
+      const width = place.widthMeters ? ` 추정 폭은 약 ${place.widthMeters.toLocaleString("ko-KR")}m입니다.` : "";
+      inspectorBody.textContent = `주요 강. OSM 기반 수계 경로이며, 현재 지도에는 약 ${formatKm(place.lengthKm)} 구간으로 표시됩니다.${width}`;
+      state.staticDirty = true;
+      return;
+    }
+
+    if (place.type === "railway") {
+      inspectorTitle.textContent = place.name;
+      inspectorBody.textContent = `주요 철도 노선. OSM 기반 철도 경로이며, 현재 지도에는 약 ${formatKm(place.lengthKm)} 구간으로 표시됩니다.`;
+      state.staticDirty = true;
+      return;
+    }
+
+    if (place.kind === "nationalPark") {
+      inspectorTitle.textContent = place.name;
+      inspectorBody.textContent = describeNationalPark(place);
+      state.staticDirty = true;
+      return;
+    }
+
+    if (place.icon === "lake") {
+      inspectorTitle.textContent = place.name;
+      inspectorBody.textContent = `호수. ${lakeDetails[place.id] || "주요 수변 지형으로 지도 위 자연 요소로 표시됩니다."}`;
+      state.staticDirty = true;
+      return;
+    }
+
     if (place.kind === "mountain") {
       inspectorTitle.textContent = place.name;
       const elevation = place.elevation ? `${Math.round(place.elevation).toLocaleString("ko-KR")}m` : "고도 정보 없음";
@@ -1277,21 +1350,72 @@
     return labels[kind] || kind;
   }
 
+  function formatKm(value) {
+    if (!Number.isFinite(value)) return "알 수 없는 길이";
+    return `${value.toLocaleString("ko-KR", { maximumFractionDigits: value >= 10 ? 0 : 1 })}km`;
+  }
+
+  function describeNationalPark(park) {
+    const name = park.name || "국립공원";
+    if (/경주/.test(name)) return "역사 유산과 산지가 함께 보존된 국립공원입니다. 게임에서는 문화 유적과 자연 지형이 만나는 지역으로 활용하기 좋습니다.";
+    if (/한려|다도해|태안/.test(name)) return "해안과 섬, 바다 경관이 중심인 국립공원입니다. 항로, 섬, 해안 지형 요소와 함께 배치하기 좋습니다.";
+    if (/북한산|계룡산|속리산|월악산|소백산|오대산|설악산|태백산|덕유산|지리산|한라산|가야산|주왕산|치악산|팔공산|무등산|월출산|내장산/.test(name)) {
+      return "산지 경관과 탐방로가 중심인 국립공원입니다. 산 아이콘, 능선, 숲 지형과 함께 표시하기 좋은 보호 구역입니다.";
+    }
+    if (/변산/.test(name)) return "반도 지형의 해안과 산지가 함께 나타나는 국립공원입니다. 바다와 산지 요소를 함께 배치하기 좋습니다.";
+    return "OSM 좌표 기반으로 표시한 국립공원입니다. 자연 보호 구역과 주요 탐험 지점으로 활용할 수 있습니다.";
+  }
+
   function findNearestPlace(x, y, radius = 20) {
     let best = null;
-    let bestDistance = radius;
+    let bestScore = radius;
     const sourcePlaces = real?.places?.length ? real.places : data.places;
-    const selectablePlaces = state.showNature
-      ? [...sourcePlaces, ...selectableIslands, ...majorMountains]
-      : [...sourcePlaces, ...selectableIslands];
+    const selectablePlaces = [...sourcePlaces, ...selectableIslands];
+    if (state.showNature) {
+      selectablePlaces.push(...majorMountains, ...(real?.nationalParks || []).filter(isNationalParkVisible), ...data.lakes);
+    }
+
+    function consider(candidate, distance, priority = 0) {
+      const score = distance + priority;
+      if (score < bestScore) {
+        best = candidate;
+        bestScore = score;
+      }
+    }
+
     for (const place of selectablePlaces) {
       const p = placePoint(place);
       const d = Math.hypot(p.x - x, p.y - y);
-      if (d < bestDistance) {
-        best = place;
-        bestDistance = d;
+      if (d < radius) consider(place, d);
+    }
+
+    const linePriority = 4 / state.zoom;
+    if (state.showRoads && real?.roads?.length) {
+      for (const road of real.roads) {
+        if (!isRoadVisible(road)) continue;
+        const tolerance = (road.class === "expressway" ? 9 : 7) / state.zoom;
+        const d = distanceToPath([x, y], road.path, tolerance);
+        if (d <= tolerance) consider(road, d, linePriority);
       }
     }
+
+    if (state.showNature && real?.rivers?.length) {
+      for (const river of real.rivers) {
+        const tolerance = Math.max(((river.displayWidth || 4) + 6) / state.zoom, 2.5);
+        const d = distanceToPath([x, y], river.path, tolerance);
+        if (d <= tolerance) consider(river, d, linePriority);
+      }
+    }
+
+    if (state.showRailways && real?.railways?.length) {
+      for (const rail of real.railways) {
+        if (!isMajorRailway(rail)) continue;
+        const tolerance = 8 / state.zoom;
+        const d = distanceToPath([x, y], rail.path, tolerance);
+        if (d <= tolerance) consider(rail, d, linePriority);
+      }
+    }
+
     return best;
   }
 
@@ -1322,6 +1446,25 @@
       if (intersect) inside = !inside;
     }
     return inside;
+  }
+
+  function distanceToPath(point, path, limit = Infinity) {
+    if (!path || path.length < 2) return Infinity;
+    let best = Infinity;
+    for (let i = 1; i < path.length; i++) {
+      const d = distanceToSegment(point, path[i - 1], path[i]);
+      if (d < best) best = d;
+      if (best <= 0.01) return best;
+    }
+    return best;
+  }
+
+  function distanceToSegment(point, start, end) {
+    const dx = end[0] - start[0];
+    const dy = end[1] - start[1];
+    if (dx === 0 && dy === 0) return Math.hypot(point[0] - start[0], point[1] - start[1]);
+    const t = clamp(((point[0] - start[0]) * dx + (point[1] - start[1]) * dy) / (dx * dx + dy * dy), 0, 1);
+    return Math.hypot(point[0] - (start[0] + dx * t), point[1] - (start[1] + dy * t));
   }
 
   function polygonCentroid(points) {

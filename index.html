@@ -23,6 +23,7 @@
           <label><input id="toggleRoads" type="checkbox" checked> 도로</label>
           <label><input id="toggleExpressways" type="checkbox" checked> 고속도로</label>
           <label><input id="toggleNationalRoads" type="checkbox" checked> 국도</label>
+          <label><input id="toggleRestAreas" type="checkbox" checked> 휴게소</label>
         </span>
         <span class="toolbar-group">
           <label><input id="toggleRailways" type="checkbox" checked> 철도</label>
@@ -57,6 +58,7 @@
           <h2>범례</h2>
           <div><span class="swatch expressway"></span>고속도로</div>
           <div><span class="swatch national"></span>국도</div>
+          <div><span class="swatch rest-area"></span>휴게소</div>
           <div><span class="swatch railway"></span>철도</div>
           <div><span class="swatch station"></span>철도역</div>
           <div><span class="swatch river"></span>강</div>
@@ -76,7 +78,7 @@
     </main>
 
     <script src="./src/data/korea-map-data.js"></script>
-    <script src="./src/data/real-overlays.js"></script>
-    <script src="./src/main.js" defer></script>
+    <script src="./src/data/real-overlays.js?v=rest-areas"></script>
+    <script src="./src/main.js?v=rest-areas" defer></script>
   </body>
 </html>

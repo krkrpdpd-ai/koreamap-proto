@@ -192,6 +192,12 @@ body {
   background: var(--road-national);
 }
 
+.rest-area {
+  background:
+    linear-gradient(#7c4d25 0 0) 50% 70% / 8px 3px no-repeat,
+    var(--field);
+}
+
 .railway {
   background: repeating-linear-gradient(
     90deg,

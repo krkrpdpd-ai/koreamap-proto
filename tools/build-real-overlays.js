@@ -12,6 +12,7 @@ const peaksPath = path.join(root, "data", "geo", "arcgis-peaks.geojson");
 const islandPointsPath = path.join(root, "data", "geo", "arcgis-island-points.geojson");
 const nationalParkPointsPath = path.join(root, "data", "geo", "arcgis-national-park-points.geojson");
 const nationalParkNamePointsPath = path.join(root, "data", "geo", "arcgis-national-park-name-points.geojson");
+const restAreaPath = path.join(root, "data", "geo", "arcgis-highway-rest-areas.geojson");
 const naturalEarthCountriesPath = path.join(root, "data", "geo", "natural-earth-ne_10m_admin_0_countries.geojson");
 const fieldsPath = path.join(root, "data", "geo", "arcgis-named-fields.geojson");
 const fieldsSamplePath = path.join(root, "data", "geo", "arcgis-fields-sample.geojson");
@@ -592,6 +593,116 @@ function buildRoads(provinces) {
   return mergeLines(dedupeLines(raw), 4.5, { genericNames: new Set(["road", "national", "expressway"]) })
     .filter(keepDisplayRoad)
     .sort((a, b) => roadClassRank(a.class) - roadClassRank(b.class) || (b.length || 0) - (a.length || 0));
+}
+
+function buildRestAreas(provinces, roads) {
+  if (!fs.existsSync(restAreaPath)) return [];
+
+  const expressways = roads.filter((road) => road.class === "expressway" && road.path?.length >= 2);
+  const restAreas = [];
+
+  for (const feature of readJson(restAreaPath).features || []) {
+    const props = feature.properties || {};
+    const coords = feature.geometry?.type === "Point" ? feature.geometry.coordinates : null;
+    if (!coords || coords.length < 2) continue;
+
+    const [lon, lat] = coords.map(Number);
+    if (!Number.isFinite(lon) || !Number.isFinite(lat)) continue;
+
+    const name = cleanRestAreaName(pickName(props) || props.name_en);
+    if (!isHighwayRestAreaName(name, props)) continue;
+
+    const point = roundPoint(toWorld(lon, lat));
+    if (!pointInProvinces(point, provinces)) continue;
+
+    const nearest = nearestRouteToPoint(point, expressways);
+    if (!nearest || nearest.distance > 8) continue;
+
+    restAreas.push({
+      id: String(props.osm_id2 || props.objectid || `rest-area-${restAreas.length}`),
+      name,
+      nameEn: props.name_en || "",
+      type: "restArea",
+      kind: "restArea",
+      icon: "restArea",
+      lon: round(lon),
+      lat: round(lat),
+      point,
+      roadName: nearest.road.name,
+      routeDistanceKm: round((nearest.distance / tilePx) * tileKm),
+      operator: props.operator || props.brand || "",
+      openingHours: props.opening_hours || "",
+      website: props.website || "",
+      source: "ArcGIS OSM Asia POIs highway services/rest_area query",
+      labelWeight: restAreaLabelWeight(props, nearest.distance),
+      description: restAreaDescription(nearest.road.name, props)
+    });
+  }
+
+  return dedupeRestAreas(restAreas).sort((a, b) => (a.labelWeight || 9) - (b.labelWeight || 9) || a.name.localeCompare(b.name, "ko"));
+}
+
+function cleanRestAreaName(name) {
+  return String(name || "")
+    .replace(/\s+/g, " ")
+    .replace(/\s+Hyugeso\b/i, " 휴게소")
+    .trim();
+}
+
+function isHighwayRestAreaName(name, props) {
+  const text = `${name} ${props.name_en || ""} ${props.description || ""}`;
+  if (!name) return false;
+  return /휴게소|service area|service station|services area|services$/i.test(text);
+}
+
+function nearestRouteToPoint(point, roads) {
+  let best = null;
+  for (const road of roads) {
+    const distance = distanceToLinePath(point, road.path);
+    if (!best || distance < best.distance) best = { road, distance };
+  }
+  return best;
+}
+
+function distanceToLinePath(point, path) {
+  if (!path || path.length < 2) return Infinity;
+  let best = Infinity;
+  for (let i = 1; i < path.length; i++) {
+    const distance = distanceToSegment(point, path[i - 1], path[i]);
+    if (distance < best) best = distance;
+  }
+  return best;
+}
+
+function restAreaLabelWeight(props, distance) {
+  if (String(props.highway || "").toLowerCase() === "rest_area") return distance <= 8 ? 2 : 3;
+  if (distance <= 6) return 4;
+  if (distance <= 12) return 5;
+  return 6;
+}
+
+function restAreaDescription(roadName, props) {
+  const operator = props.operator || props.brand;
+  const hours = props.opening_hours;
+  const parts = [`${roadName || "고속도로"} 인근의 고속도로 휴게소입니다.`];
+  if (operator) parts.push(`운영/브랜드: ${operator}.`);
+  if (hours) parts.push(`영업 시간 태그: ${hours}.`);
+  parts.push("OSM POI 좌표를 고속도로 선형에 맞춰 표시했습니다.");
+  return parts.join(" ");
+}
+
+function dedupeRestAreas(restAreas) {
+  const out = [];
+  for (const area of restAreas) {
+    const nameKey = normalizeName(area.name);
+    const duplicate = out.find((candidate) => normalizeName(candidate.name) === nameKey && pointDistance(candidate.point, area.point) < 8);
+    if (!duplicate) {
+      out.push(area);
+      continue;
+    }
+    if ((area.labelWeight || 9) < (duplicate.labelWeight || 9)) Object.assign(duplicate, area);
+  }
+  return out;
 }
 
 function buildRivers(provinces) {
@@ -1889,6 +2000,7 @@ const provinces = buildSgisProvinces();
 const places = buildPlaces(provinces);
 const islands = buildIslands();
 const roads = buildRoads(provinces);
+const restAreas = buildRestAreas(provinces, roads);
 const rivers = buildRivers(provinces);
 const railways = buildRailways(provinces);
 const railwayStations = buildRailwayStations(provinces);
@@ -1905,13 +2017,14 @@ const overlays = {
       "HOT/HDX South Korea populated places OSM GeoJSON export",
       "HOT/HDX South Korea railways and stations OSM GeoJSON export",
       "ArcGIS OSM Asia Highways Korea major-route GeoJSON query",
+      "ArcGIS OSM Asia POIs highway rest area GeoJSON query",
       "ArcGIS OSM Asia Waterways GeoJSON query",
       "ArcGIS OSM Asia POIs peak GeoJSON query",
       "ArcGIS OSM Asia POIs island and national park GeoJSON queries",
       "ArcGIS OSM Asia Landuse field GeoJSON query",
       "Natural Earth Admin 0 Countries 1:10m GeoJSON"
     ],
-    note: "Road, river, rail, city/county, peak, island, national park, and field overlays are OSM-derived from HOT/HDX and ArcGIS services with curated coordinate fallbacks where OSM point coverage is sparse. Railway station points are limited to a curated major train station name list, removing subway-only, monorail, and tourist platform entries. Province boundaries use SGIS because a compact OSM admin-boundary export was not available in the current source set. Country land background for South Korea, North Korea, and nearby visible Japanese land uses Natural Earth Admin 0 country polygons.",
+    note: "Road, rest area, river, rail, city/county, peak, island, national park, and field overlays are OSM-derived from HOT/HDX and ArcGIS services with curated coordinate fallbacks where OSM point coverage is sparse. Rest areas use OSM POI highway services/rest_area points filtered to named features near expressway geometry. Railway station points are limited to a curated major train station name list, removing subway-only, monorail, and tourist platform entries. Province boundaries use SGIS because a compact OSM admin-boundary export was not available in the current source set. Country land background for South Korea, North Korea, and nearby visible Japanese land uses Natural Earth Admin 0 country polygons.",
     coordinateSpace: "app base canvas pixels"
   },
   countryLand,
@@ -1919,6 +2032,7 @@ const overlays = {
   places,
   islands,
   roads,
+  restAreas,
   rivers,
   railways,
   railwayStations,
@@ -1937,6 +2051,7 @@ console.log(
     places: places.length,
     islands: islands.length,
     roads: roads.length,
+    restAreas: restAreas.length,
     rivers: rivers.length,
     railways: railways.length,
     railwayStations: railwayStations.length,

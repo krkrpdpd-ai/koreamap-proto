@@ -12,6 +12,7 @@
     showRoads: true,
     showExpressways: true,
     showNationalRoads: true,
+    showRestAreas: true,
     showRailways: true,
     showRailwayStations: true,
     showNature: true,
@@ -91,6 +92,8 @@
     expresswayDark: "#7c4d25",
     national: "#d86b4a",
     nationalDark: "#683238",
+    restArea: "#f6c85f",
+    restAreaDark: "#7c4d25",
     rail: "#d8d0b0",
     railDark: "#252b30",
     station: "#f2d27c",
@@ -397,6 +400,7 @@
       drawPointFeatures(staticCtx, data.lakes, 1);
     }
     if (state.showRoads) drawRoads(staticCtx);
+    if (state.showRoads && state.showRestAreas) drawRestAreas(staticCtx);
     if (state.showRailways) drawRailways(staticCtx);
     if (isNatureLayerVisible("showMountains")) drawMajorMountains(staticCtx);
     if (state.showBoundaries && !real?.provinces?.length) drawProvinceBoundaries(staticCtx);
@@ -831,11 +835,47 @@
     target.restore();
   }
 
+  function drawRestAreas(target) {
+    if (!real?.restAreas?.length) return;
+
+    const areas = [...real.restAreas].filter(isRestAreaVisible).sort((a, b) => (b.labelWeight || 9) - (a.labelWeight || 9));
+    let labels = 0;
+
+    target.save();
+    for (const area of areas) {
+      const p = { x: area.point[0], y: area.point[1] };
+      if (area === state.selectedPlace || area === state.hoverPlace) {
+        const markerSize = 30 / state.zoom;
+        target.fillStyle = area === state.selectedPlace ? palette.selected : "#bdf3ff";
+        target.fillRect(Math.round(p.x - markerSize / 2), Math.round(p.y - markerSize / 2), markerSize, markerSize);
+      }
+
+      drawIcon(target, "restArea", p.x, p.y, area.labelWeight <= 3 ? 0.78 : 0.64, true);
+
+      const showRestAreaLabel =
+        area.labelWeight <= 2 ||
+        (state.zoom >= 1.6 && area.labelWeight <= 4) ||
+        (state.zoom >= 2.4 && area.labelWeight <= 6);
+      if (state.showLabels && showRestAreaLabel && labels < 36) {
+        drawLabel(target, area.name, p.x + 8 / state.zoom, p.y - 1 / state.zoom, area.labelWeight <= 2 ? 10 : 9);
+        labels += 1;
+      }
+    }
+    target.restore();
+  }
+
   function isRailwayStationVisible(station) {
     if (!state.showRailways || !state.showRailwayStations) return false;
     if (station.labelWeight <= 1) return true;
     if (station.labelWeight <= 4) return state.zoom >= 1.3;
     return state.zoom >= 2.1;
+  }
+
+  function isRestAreaVisible(area) {
+    if (!state.showRoads || !state.showExpressways || !state.showRestAreas) return false;
+    if ((area.labelWeight || 9) <= 2) return true;
+    if ((area.labelWeight || 9) <= 4) return state.zoom >= 1.6;
+    return state.zoom >= 2.3;
   }
 
   function isMajorRailway(rail) {
@@ -1271,6 +1311,15 @@
         px(15, 15, 3, 5, "#9b7950");
         px(9, 16, 6, 2, "#63c5da");
         break;
+      case "restArea":
+        px(5, 7, 14, 10, "#2b2e34");
+        px(6, 6, 12, 10, palette.restArea);
+        px(8, 8, 8, 2, palette.restAreaDark);
+        px(8, 12, 5, 3, "#2b2e34");
+        px(15, 10, 2, 6, "#2b2e34");
+        px(7, 17, 10, 2, palette.restAreaDark);
+        px(10, 19, 4, 2, palette.restAreaDark);
+        break;
       case "station":
         px(5, 8, 14, 10, "#252b30");
         px(6, 7, 12, 10, "#f2d27c");
@@ -1520,6 +1569,17 @@
       return;
     }
 
+    if (place.type === "restArea") {
+      inspectorTitle.textContent = place.name;
+      const nameEn = place.nameEn ? ` / ${place.nameEn}` : "";
+      const route = place.roadName ? `${place.roadName} 인근` : "고속도로 인근";
+      const operator = place.operator ? ` 운영/브랜드: ${place.operator}.` : "";
+      const hours = place.openingHours ? ` 영업 시간 태그: ${place.openingHours}.` : "";
+      inspectorBody.textContent = `고속도로 휴게소${nameEn}. ${route}의 OSM POI 위치를 표시했습니다.${operator}${hours}`;
+      state.staticDirty = true;
+      return;
+    }
+
     if (place.type === "river") {
       inspectorTitle.textContent = place.name;
       const width = place.widthMeters ? ` 추정 폭은 약 ${place.widthMeters.toLocaleString("ko-KR")}m입니다.` : "";
@@ -1640,6 +1700,16 @@
         const stationRadius = Math.max(radius, 16 / state.zoom);
         const d = Math.hypot(p.x - x, p.y - y);
         if (d < stationRadius) consider(station, d, station.labelWeight <= 1 ? 0 : 1.5 / state.zoom);
+      }
+    }
+
+    if (state.showRoads && state.showRestAreas && real?.restAreas?.length) {
+      for (const area of real.restAreas) {
+        if (!isRestAreaVisible(area)) continue;
+        const p = placePoint(area);
+        const restAreaRadius = Math.max(radius, 17 / state.zoom);
+        const d = Math.hypot(p.x - x, p.y - y);
+        if (d < restAreaRadius) consider(area, d, -1 / state.zoom);
       }
     }
 
@@ -1783,7 +1853,7 @@
 
   function syncToggleGroups() {
     const groups = {
-      toggleRoads: ["toggleExpressways", "toggleNationalRoads"],
+      toggleRoads: ["toggleExpressways", "toggleNationalRoads", "toggleRestAreas"],
       toggleRailways: ["toggleRailwayStations"],
       toggleNature: ["toggleMountains", "toggleRivers", "toggleLakes", "toggleNationalParks"]
     };
@@ -1803,6 +1873,7 @@
   setToggle("toggleRoads", "showRoads");
   setToggle("toggleExpressways", "showExpressways");
   setToggle("toggleNationalRoads", "showNationalRoads");
+  setToggle("toggleRestAreas", "showRestAreas");
   setToggle("toggleRailways", "showRailways");
   setToggle("toggleRailwayStations", "showRailwayStations");
   setToggle("toggleNature", "showNature");

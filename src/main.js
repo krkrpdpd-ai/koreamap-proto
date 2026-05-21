@@ -202,6 +202,7 @@
   };
 
   const selectableIslands = buildSelectableIslands();
+  const selectableRoadRoutes = buildSelectableRoadRoutes();
 
   function buildSelectableIslands() {
     return (real?.islands || []).map((island) => ({
@@ -209,6 +210,80 @@
       kind: "island",
       description: islandDetails[island.id] || island.description || `${island.name}은 지도에 표시된 주요 섬입니다.`
     }));
+  }
+
+  function buildSelectableRoadRoutes() {
+    if (!real?.roads?.length) return [];
+    const groups = new Map();
+
+    for (const road of real.roads) {
+      if (!road.path?.length) continue;
+      const key = roadRouteKey(road);
+      if (!groups.has(key)) {
+        groups.set(key, {
+          id: `road-route:${key}`,
+          type: "road",
+          class: road.class,
+          name: canonicalRoadDisplayName(road.name),
+          paths: [],
+          segments: [],
+          length: 0,
+          lengthKm: 0,
+          source: road.source
+        });
+      }
+
+      const group = groups.get(key);
+      group.paths.push(road.path);
+      group.segments.push(road);
+      group.length += road.length || 0;
+      group.lengthKm += road.lengthKm || 0;
+    }
+
+    return [...groups.values()]
+      .map((route) => ({
+        ...route,
+        point: routeLabelPoint(route),
+        segmentCount: route.segments.length,
+        length: Math.round(route.length),
+        lengthKm: Math.round(route.lengthKm * 10) / 10
+      }))
+      .sort((a, b) => roadClassRank(a.class) - roadClassRank(b.class) || (b.length || 0) - (a.length || 0));
+  }
+
+  function roadRouteKey(road) {
+    return `${road.class || road.type || "road"}:${canonicalRoadDisplayName(road.name).replace(/\s+/g, "").toLowerCase()}`;
+  }
+
+  function canonicalRoadDisplayName(name) {
+    const trimmed = String(name || "road").trim();
+    const aliases = {
+      "Seoul-Yangyang Expressway": "서울양양고속도로",
+      "Yeongdong Expressway": "영동고속도로",
+      "Donghae Expressway": "동해고속도로",
+      "Hamyang-Ulsan Expressway": "함양울산고속도로",
+      "Jungang Expressway Branch": "중앙고속도로지선",
+      "Pyeongtaek-Paju Expressway": "평택파주고속도로",
+      "Namhae Expressway": "남해고속도로",
+      "Jungang Expressway": "중앙고속도로",
+      "Gyeongbu Expressway": "경부고속도로",
+      "West Coast Expressway": "서해안고속도로",
+      "미사대로;서울양양고속도로": "서울양양고속도로"
+    };
+    return aliases[trimmed] || trimmed;
+  }
+
+  function routeLabelPoint(route) {
+    const longest = route.segments.reduce((best, road) => ((road.length || 0) > (best?.length || 0) ? road : best), null);
+    if (!longest?.path?.length) return null;
+    const p = longest.path[Math.floor(longest.path.length / 2)];
+    return [p[0], p[1]];
+  }
+
+  function roadClassRank(value) {
+    if (value === "expressway") return 0;
+    if (value === "national") return 1;
+    return 2;
   }
 
   const majorRailwayNames = new Set([
@@ -659,9 +734,6 @@
       if (!isRoadVisible(road)) continue;
       const color = road.class === "expressway" ? palette.expressway : palette.national;
       drawWorldStroke(target, road.path, color, road.class === "expressway" ? 4.2 : 2.8, true);
-      if (road === state.selectedPlace || road === state.hoverPlace) {
-        drawWorldStroke(target, road.path, road === state.selectedPlace ? palette.selected : "#bdf3ff", road.class === "expressway" ? 6.4 : 4.8, true);
-      }
 
       if (state.showLabels && road.name && labelCount < 28 && road.length > 9000 && !labeled.has(road.name)) {
         if (road.class === "national" && state.zoom < 1.35) continue;
@@ -671,7 +743,18 @@
         labelCount += 1;
       }
     }
+    drawRoadRouteHighlight(target, state.hoverPlace, "#bdf3ff");
+    drawRoadRouteHighlight(target, state.selectedPlace, palette.selected);
     target.restore();
+  }
+
+  function drawRoadRouteHighlight(target, route, color) {
+    if (!route || route.type !== "road" || !isRoadClassEnabled(route)) return;
+    const width = route.class === "expressway" ? 6.4 : 4.8;
+    const paths = route.paths || (route.path ? [route.path] : []);
+    for (const path of paths) {
+      drawWorldStroke(target, path, color, width, true);
+    }
   }
 
   function isRoadVisible(road) {
@@ -1360,12 +1443,22 @@
   }
 
   function featurePosition(feature, fallbackPoint = null) {
+    if (feature?.paths?.length) {
+      return closestPointOnPaths(fallbackPoint || routePoint(feature), feature.paths);
+    }
     if (feature?.path?.length >= 2) {
       return closestPointOnPath(fallbackPoint || pathMidpoint(feature.path), feature.path);
     }
     if (feature?.point?.length >= 2) return { x: feature.point[0], y: feature.point[1] };
     if (Number.isFinite(feature?.lon) && Number.isFinite(feature?.lat)) return toWorld([feature.lon, feature.lat]);
     return fallbackPoint || player;
+  }
+
+  function routePoint(route) {
+    if (route?.point?.length >= 2) return { x: route.point[0], y: route.point[1] };
+    const firstPath = route?.paths?.find((path) => path?.length);
+    if (firstPath) return pathMidpoint(firstPath);
+    return player;
   }
 
   function pathMidpoint(path) {
@@ -1380,6 +1473,21 @@
     let bestDistance = Infinity;
     for (let i = 1; i < path.length; i++) {
       const candidate = closestPointOnSegment(point, path[i - 1], path[i]);
+      const distance = Math.hypot(point.x - candidate.x, point.y - candidate.y);
+      if (distance < bestDistance) {
+        best = candidate;
+        bestDistance = distance;
+      }
+    }
+    return best;
+  }
+
+  function closestPointOnPaths(point, paths) {
+    let best = point || player;
+    let bestDistance = Infinity;
+    for (const path of paths || []) {
+      if (!path?.length) continue;
+      const candidate = closestPointOnPath(point, path);
       const distance = Math.hypot(point.x - candidate.x, point.y - candidate.y);
       if (distance < bestDistance) {
         best = candidate;
@@ -1406,7 +1514,8 @@
     if (place.type === "road") {
       inspectorTitle.textContent = place.name;
       const roadType = place.class === "expressway" ? "고속도로" : "국도";
-      inspectorBody.textContent = `${roadType}. OSM 기반 도로 경로이며, 현재 지도에는 약 ${formatKm(place.lengthKm)} 구간으로 표시됩니다.`;
+      const segmentText = place.segmentCount ? ` 원본 ${place.segmentCount.toLocaleString("ko-KR")}개 선 조각을 하나의 노선으로 묶어 선택했습니다.` : "";
+      inspectorBody.textContent = `${roadType}. OSM 기반 도로 경로이며, 현재 지도에는 약 ${formatKm(place.lengthKm)} 구간으로 표시됩니다.${segmentText}`;
       state.staticDirty = true;
       return;
     }
@@ -1535,12 +1644,12 @@
     }
 
     const linePriority = 4 / state.zoom;
-    if (state.showRoads && real?.roads?.length) {
-      for (const road of real.roads) {
-        if (!isRoadVisible(road)) continue;
-        const tolerance = (road.class === "expressway" ? 9 : 7) / state.zoom;
-        const d = distanceToPath([x, y], road.path, tolerance);
-        if (d <= tolerance) consider(road, d, linePriority);
+    if (state.showRoads && selectableRoadRoutes.length) {
+      for (const route of selectableRoadRoutes) {
+        if (!isRoadClassEnabled(route)) continue;
+        const tolerance = (route.class === "expressway" ? 9 : 7) / state.zoom;
+        const d = distanceToPaths([x, y], route.paths, tolerance);
+        if (d <= tolerance) consider(route, d, linePriority);
       }
     }
 
@@ -1599,6 +1708,16 @@
     for (let i = 1; i < path.length; i++) {
       const d = distanceToSegment(point, path[i - 1], path[i]);
       if (d < best) best = d;
+      if (best <= 0.01) return best;
+    }
+    return best;
+  }
+
+  function distanceToPaths(point, paths, limit = Infinity) {
+    let best = Infinity;
+    for (const path of paths || []) {
+      const distance = distanceToPath(point, path, limit);
+      if (distance < best) best = distance;
       if (best <= 0.01) return best;
     }
     return best;

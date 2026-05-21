@@ -43,6 +43,16 @@
 
   const keys = new Set();
   const sprites = new Map();
+  const dragPan = {
+    active: false,
+    pointerId: null,
+    startX: 0,
+    startY: 0,
+    startScrollLeft: 0,
+    startScrollTop: 0,
+    moved: false,
+    suppressClick: false
+  };
   const player = {
     ...toWorld([126.978, 37.566]),
     speed: 132,
@@ -243,16 +253,25 @@
     state.staticDirty = true;
   }
 
-  function setZoom(nextZoom) {
+  function setZoom(nextZoom, anchor = null) {
     const oldZoom = state.zoom;
     const clamped = clamp(nextZoom, 0.65, 5);
     if (Math.abs(clamped - oldZoom) < 0.001) return;
 
-    const centerX = (frame.scrollLeft + frame.clientWidth / 2) / oldZoom;
-    const centerY = (frame.scrollTop + frame.clientHeight / 2) / oldZoom;
+    const target = anchor || {
+      clientX: frame.getBoundingClientRect().left + frame.clientWidth / 2,
+      clientY: frame.getBoundingClientRect().top + frame.clientHeight / 2
+    };
+    const frameRect = frame.getBoundingClientRect();
+    const focusX = target.clientX - frameRect.left;
+    const focusY = target.clientY - frameRect.top;
+    const worldX = (frame.scrollLeft + focusX) / oldZoom;
+    const worldY = (frame.scrollTop + focusY) / oldZoom;
+
     state.zoom = clamped;
     updateCanvasScale();
-    scrollToWorld(centerX, centerY);
+    frame.scrollLeft = Math.max(0, worldX * state.zoom - focusX);
+    frame.scrollTop = Math.max(0, worldY * state.zoom - focusY);
   }
 
   function scrollToWorld(x, y) {
@@ -1348,12 +1367,48 @@
   frame.addEventListener(
     "wheel",
     (event) => {
-      if (!event.ctrlKey && !event.metaKey) return;
       event.preventDefault();
-      setZoom(state.zoom + (event.deltaY < 0 ? 0.12 : -0.12));
+      const wheelScale = clamp(Math.exp(-event.deltaY * 0.0015), 0.82, 1.22);
+      setZoom(state.zoom * wheelScale, { clientX: event.clientX, clientY: event.clientY });
     },
     { passive: false }
   );
+
+  canvas.addEventListener("pointerdown", (event) => {
+    if (event.button !== 0) return;
+    dragPan.active = true;
+    dragPan.pointerId = event.pointerId;
+    dragPan.startX = event.clientX;
+    dragPan.startY = event.clientY;
+    dragPan.startScrollLeft = frame.scrollLeft;
+    dragPan.startScrollTop = frame.scrollTop;
+    dragPan.moved = false;
+    dragPan.suppressClick = false;
+    canvas.setPointerCapture(event.pointerId);
+    frame.classList.add("dragging");
+  });
+
+  canvas.addEventListener("pointermove", (event) => {
+    if (!dragPan.active || dragPan.pointerId !== event.pointerId) return;
+    const dx = event.clientX - dragPan.startX;
+    const dy = event.clientY - dragPan.startY;
+    if (Math.abs(dx) + Math.abs(dy) > 3) dragPan.moved = true;
+    frame.scrollLeft = dragPan.startScrollLeft - dx;
+    frame.scrollTop = dragPan.startScrollTop - dy;
+    event.preventDefault();
+  });
+
+  function endDragPan(event) {
+    if (!dragPan.active || dragPan.pointerId !== event.pointerId) return;
+    dragPan.active = false;
+    dragPan.pointerId = null;
+    dragPan.suppressClick = dragPan.moved;
+    frame.classList.remove("dragging");
+    if (canvas.hasPointerCapture(event.pointerId)) canvas.releasePointerCapture(event.pointerId);
+  }
+
+  canvas.addEventListener("pointerup", endDragPan);
+  canvas.addEventListener("pointercancel", endDragPan);
 
   window.addEventListener("keydown", (event) => {
     if (
@@ -1371,6 +1426,10 @@
   });
 
   canvas.addEventListener("click", (event) => {
+    if (dragPan.suppressClick) {
+      dragPan.suppressClick = false;
+      return;
+    }
     const rect = canvas.getBoundingClientRect();
     const x = (event.clientX - rect.left) / state.zoom;
     const y = (event.clientY - rect.top) / state.zoom;
@@ -1379,13 +1438,14 @@
   });
 
   canvas.addEventListener("mousemove", (event) => {
+    if (dragPan.active) return;
     const rect = canvas.getBoundingClientRect();
     const x = (event.clientX - rect.left) / state.zoom;
     const y = (event.clientY - rect.top) / state.zoom;
     const place = findNearestPlace(x, y, 20 / state.zoom);
     if (place !== state.hoverPlace) {
       state.hoverPlace = place;
-      canvas.style.cursor = place ? "pointer" : "default";
+      canvas.style.cursor = place ? "pointer" : "grab";
       state.staticDirty = true;
     }
   });

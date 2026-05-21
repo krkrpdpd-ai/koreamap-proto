@@ -214,8 +214,16 @@ body {
 
 #mapCanvas {
   display: block;
+  cursor: grab;
   image-rendering: pixelated;
   image-rendering: crisp-edges;
+  touch-action: none;
+  user-select: none;
+}
+
+.map-frame.dragging,
+.map-frame.dragging #mapCanvas {
+  cursor: grabbing;
 }
 
 @media (max-width: 820px) {

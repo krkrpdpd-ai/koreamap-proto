@@ -1,7 +1,7 @@
 {
   "generatedAt": "2026-05-21",
   "purpose": "2D pixel-map game prototype source registry for South Korea map overlays.",
-  "downloadStatus": "Visible overlays no longer use Overpass API files. Roads, highway rest areas, rivers, railways, populated places, peaks, and landuse-derived field patches use non-Overpass OSM-derived exports or services. Province boundaries use SGIS because a compact non-Overpass OSM admin-boundary export was not available in the current source set.",
+  "downloadStatus": "Visible overlays no longer use Overpass API files. Roads, rivers, railways, populated places, peaks, and landuse-derived field patches use non-Overpass OSM-derived exports or services. Highway rest areas use official Korea standard data imported from the provided XLS workbook. Province boundaries use SGIS because a compact non-Overpass OSM admin-boundary export was not available in the current source set.",
   "sources": [
     {
       "id": "sgis-provinces",
@@ -52,14 +52,13 @@
       "constraint": "OSM data is ODbL. Keep attribution and license obligations."
     },
     {
-      "id": "arcgis-osm-highway-rest-areas",
-      "name": "ArcGIS OSM Asia POIs FeatureServer highway services/rest_area query",
-      "url": "https://services-ap1.arcgis.com/iA7fZQOnjY9D67Zx/arcgis/rest/services/OSM_AS_POIs/FeatureServer/0",
-      "type": "public OSM-derived GeoJSON query",
-      "localFile": "data/geo/arcgis-highway-rest-areas.geojson",
+      "id": "official-highway-rest-areas",
+      "name": "Official Korea highway rest area standard data",
+      "url": "provided local workbook: 전국휴게소정보표준데이터-20260521.xls",
+      "type": "official standard data imported from XLS",
+      "localFile": "data/geo/official-highway-rest-areas.json",
       "generatedFile": "src/data/real-overlays.js",
-      "use": "Current highway rest area marker source. Build output keeps named service-area POIs near expressway geometry.",
-      "constraint": "OSM data is ODbL. Keep attribution and license obligations."
+      "use": "Current highway rest area marker source. Build output keeps only official standard-data rest areas with provided lon/lat coordinates."
     },
     {
       "id": "arcgis-osm-waterways",
@@ -122,6 +121,6 @@
     "baseFile": "src/data/korea-map-data.js",
     "realOverlayFile": "src/data/real-overlays.js",
     "coordinateSystem": "Downloaded vectors are transformed and simplified into base canvas pixel coordinates by tools/build-real-overlays.js.",
-    "accuracy": "Road, highway rest area, river, railway, populated-place, peak, and landuse overlays are aligned to OSM-derived coordinates. Province boundaries are SGIS-based and may have minor source-to-source differences from OSM transport and natural features. Country land background is Natural Earth Admin 0 and is drawn below the SGIS province layer."
+    "accuracy": "Road, river, railway, populated-place, peak, and landuse overlays are aligned to OSM-derived coordinates. Highway rest areas are aligned to official standard-data coordinates from the imported XLS workbook. Province boundaries are SGIS-based and may have minor source-to-source differences from OSM transport and natural features. Country land background is Natural Earth Admin 0 and is drawn below the SGIS province layer."
   }
 }

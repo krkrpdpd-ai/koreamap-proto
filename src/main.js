@@ -1571,11 +1571,12 @@
 
     if (place.type === "restArea") {
       inspectorTitle.textContent = place.name;
-      const nameEn = place.nameEn ? ` / ${place.nameEn}` : "";
-      const route = place.roadName ? `${place.roadName} 인근` : "고속도로 인근";
-      const operator = place.operator ? ` 운영/브랜드: ${place.operator}.` : "";
-      const hours = place.openingHours ? ` 영업 시간 태그: ${place.openingHours}.` : "";
-      inspectorBody.textContent = `고속도로 휴게소${nameEn}. ${route}의 OSM POI 위치를 표시했습니다.${operator}${hours}`;
+      const route = [place.roadName, place.direction || place.routeDirection].filter(Boolean).join(" / ");
+      const food = place.signatureFood ? ` 대표 음식: ${place.signatureFood}.` : "";
+      const phone = place.phone ? ` 전화: ${place.phone}.` : "";
+      const parking = Number.isFinite(place.parkingSpaces) ? ` 주차 ${place.parkingSpaces.toLocaleString("ko-KR")}면.` : "";
+      const amenities = formatRestAreaAmenities(place.amenities);
+      inspectorBody.textContent = `${place.restType || "고속도로 휴게소"}. ${route || "고속도로"}의 공식 표준데이터 위치입니다.${food}${phone}${parking}${amenities}`;
       state.staticDirty = true;
       return;
     }
@@ -1650,6 +1651,21 @@
       island: "섬"
     };
     return labels[kind] || kind;
+  }
+
+  function formatRestAreaAmenities(amenities = {}) {
+    const labels = [
+      ["fuel", "주유"],
+      ["evCharging", "전기차 충전"],
+      ["restaurant", "음식점"],
+      ["store", "매점"],
+      ["nursingRoom", "수유실"],
+      ["maintenance", "경정비"],
+      ["lpg", "LPG"],
+      ["shelter", "쉼터"]
+    ];
+    const enabled = labels.filter(([key]) => amenities[key]).map(([, label]) => label);
+    return enabled.length ? ` 편의시설: ${enabled.join(", ")}.` : "";
   }
 
   function formatKm(value) {

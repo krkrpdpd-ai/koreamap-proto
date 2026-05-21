@@ -1291,13 +1291,59 @@
     }
   }
 
-  function updatePosition() {
-    const p = fromWorld(player.x, player.y);
+  function updatePosition(point = player) {
+    const p = fromWorld(point.x, point.y);
     positionReadout.textContent = `${p.lon.toFixed(3)}E, ${p.lat.toFixed(3)}N`;
   }
 
-  function updateInspector(place) {
+  function updateSelectedPosition(place, fallbackPoint = null) {
+    updatePosition(featurePosition(place, fallbackPoint));
+  }
+
+  function featurePosition(feature, fallbackPoint = null) {
+    if (feature?.path?.length >= 2) {
+      return closestPointOnPath(fallbackPoint || pathMidpoint(feature.path), feature.path);
+    }
+    if (feature?.point?.length >= 2) return { x: feature.point[0], y: feature.point[1] };
+    if (Number.isFinite(feature?.lon) && Number.isFinite(feature?.lat)) return toWorld([feature.lon, feature.lat]);
+    return fallbackPoint || player;
+  }
+
+  function pathMidpoint(path) {
+    return {
+      x: path[Math.floor(path.length / 2)][0],
+      y: path[Math.floor(path.length / 2)][1]
+    };
+  }
+
+  function closestPointOnPath(point, path) {
+    let best = { x: path[0][0], y: path[0][1] };
+    let bestDistance = Infinity;
+    for (let i = 1; i < path.length; i++) {
+      const candidate = closestPointOnSegment(point, path[i - 1], path[i]);
+      const distance = Math.hypot(point.x - candidate.x, point.y - candidate.y);
+      if (distance < bestDistance) {
+        best = candidate;
+        bestDistance = distance;
+      }
+    }
+    return best;
+  }
+
+  function closestPointOnSegment(point, start, end) {
+    const dx = end[0] - start[0];
+    const dy = end[1] - start[1];
+    if (dx === 0 && dy === 0) return { x: start[0], y: start[1] };
+    const t = clamp(((point.x - start[0]) * dx + (point.y - start[1]) * dy) / (dx * dx + dy * dy), 0, 1);
+    return {
+      x: start[0] + dx * t,
+      y: start[1] + dy * t
+    };
+  }
+
+  function updateInspector(place, focusPoint = null) {
     state.selectedPlace = place;
+    updateSelectedPosition(place, focusPoint);
     if (place.type === "road") {
       inspectorTitle.textContent = place.name;
       const roadType = place.class === "expressway" ? "고속도로" : "국도";
@@ -1648,7 +1694,7 @@
     const x = (event.clientX - rect.left) / state.zoom;
     const y = (event.clientY - rect.top) / state.zoom;
     const place = findNearestPlace(x, y, 24 / state.zoom);
-    if (place) updateInspector(place);
+    if (place) updateInspector(place, { x, y });
   });
 
   canvas.addEventListener("mousemove", (event) => {

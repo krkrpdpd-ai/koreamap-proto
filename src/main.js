@@ -763,8 +763,9 @@
         target.fillRect(Math.round(p.x - markerSize / 2), Math.round(p.y - markerSize / 2), markerSize, markerSize);
       }
       drawIcon(target, place.icon, p.x, p.y, scale, true);
-      if (state.showLabels && place.labelWeight <= 4) {
-        drawLabel(target, place.name, p.x + 7, p.y - 1, place.labelWeight <= 1 ? 13 : 11);
+      const showCountyLabel = place.kind === "county" && state.zoom >= 1.15 && place.labelWeight <= 5;
+      if (state.showLabels && (place.labelWeight <= 4 || showCountyLabel)) {
+        drawLabel(target, place.name, p.x + 7, p.y - 1, place.labelWeight <= 1 ? 13 : place.kind === "county" ? 10 : 11);
       }
     }
   }

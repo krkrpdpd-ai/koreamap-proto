@@ -82,6 +82,98 @@ const nationalParkSeeds = [
   { id: "palgongsan", name: "팔공산국립공원", aliases: ["팔공산"], lon: 128.70, lat: 36.02, radius: 28, labelWeight: 3 }
 ];
 
+const countySeeds = [
+  ["Boeun-gun", "보은군", "충북"],
+  ["Bonghwa-gun", "봉화군", "경북"],
+  ["Boseong-gun", "보성군", "전남"],
+  ["Buan-gun", "부안군", "전북"],
+  ["Buyeo-gun", "부여군", "충남"],
+  ["Changnyeong-gun", "창녕군", "경남"],
+  ["Cheongdo-gun", "청도군", "경북"],
+  ["Cheongsong-gun", "청송군", "경북"],
+  ["Cheongyang-gun", "청양군", "충남"],
+  ["Cheorwon-gun", "철원군", "강원"],
+  ["Chilgok-gun", "칠곡군", "경북"],
+  ["Dalseong-gun", "달성군", "대구"],
+  ["Damyang-gun", "담양군", "전남"],
+  ["Danyang-gun", "단양군", "충북"],
+  ["Eumseong-gun", "음성군", "충북"],
+  ["Ganghwa-gun", "강화군", "인천"],
+  ["Gangjin-gun", "강진군", "전남"],
+  ["Gapyeong-gun", "가평군", "경기"],
+  ["Geochang-gun", "거창군", "경남"],
+  ["Geumsan-gun", "금산군", "충남"],
+  ["Gijang-gun", "기장군", "부산"],
+  ["Gochang-gun", "고창군", "전북"],
+  ["Goesan-gun", "괴산군", "충북"],
+  ["Goheung-gun", "고흥군", "전남"],
+  ["Gokseong-gun", "곡성군", "전남"],
+  ["Goryeong-gun", "고령군", "경북"],
+  ["Goseong-gun", "고성군(강원)", "강원", { sourceAdm1s: ["Gangwon"] }],
+  ["Goseong-gun", "고성군(경남)", "경남", { sourceAdm1s: ["South Gyeongsang"] }],
+  ["Gunwi-gun", "군위군", "대구"],
+  ["Gurye-gun", "구례군", "전남"],
+  ["Hadong-gun", "하동군", "경남"],
+  ["Haenam-gun", "해남군", "전남"],
+  ["Haman-gun", "함안군", "경남"],
+  ["Hampyeong-gun", "함평군", "전남"],
+  ["Hamyang-gun", "함양군", "경남"],
+  ["Hapcheon-gun", "합천군", "경남"],
+  ["Hoengseong-gun", "횡성군", "강원"],
+  ["Hongcheon-gun", "홍천군", "강원"],
+  ["Hongseong-gun", "홍성군", "충남"],
+  ["Hwacheon-gun", "화천군", "강원"],
+  ["Hwasun-gun", "화순군", "전남"],
+  ["Imsil-gun", "임실군", "전북"],
+  ["Inje-gun", "인제군", "강원"],
+  ["Jangheung-gun", "장흥군", "전남"],
+  ["Jangseong-gun", "장성군", "전남"],
+  ["Jangsu-gun", "장수군", "전북"],
+  ["Jeongseon-gun", "정선군", "강원"],
+  ["Jeungpyeong-gun", "증평군", "충북"],
+  ["Jinan-gun", "진안군", "전북"],
+  ["Jincheon-gun", "진천군", "충북"],
+  ["Jindo-gun", "진도군", "전남"],
+  ["Muan-gun", "무안군", "전남"],
+  ["Muju-gun", "무주군", "전북"],
+  ["Namhae-gun", "남해군", "경남"],
+  ["Okcheon-gun", "옥천군", "충북"],
+  ["Ongjin-gun", "옹진군", "인천"],
+  ["Pyeongchang-gun", "평창군", "강원"],
+  ["Sancheong-gun", "산청군", "경남"],
+  ["Seocheon-gun", "서천군", "충남"],
+  ["Seongju-gun", "성주군", "경북"],
+  ["Sinan-gun", "신안군", "전남"],
+  ["Sunchang-gun", "순창군", "전북"],
+  ["Taean-gun", "태안군", "충남"],
+  ["Uiryeong-gun", "의령군", "경남"],
+  ["Uiseong-gun", "의성군", "경북"],
+  ["Uljin-gun", "울진군", "경북"],
+  ["Ulju-gun", "울주군", "울산"],
+  ["Ulleung-gun", "울릉군", "경북"],
+  ["Wando-gun", "완도군", "전남"],
+  ["Wanju-gun", "완주군", "전북"],
+  ["Yanggu-gun", "양구군", "강원"],
+  ["Yangpyeong-gun", "양평군", "경기"],
+  ["Yangyang-gun", "양양군", "강원"],
+  ["Yecheon-gun", "예천군", "경북"],
+  ["Yeoncheon-gun", "연천군", "경기"],
+  ["Yeongam-gun", "영암군", "전남"],
+  ["Yeongdeok-gun", "영덕군", "경북"],
+  ["Yeongdong-gun", "영동군", "충북"],
+  ["Yeonggwang-gun", "영광군", "전남", { lon: 126.512, lat: 35.277 }],
+  ["Yeongwol-gun", "영월군", "강원"],
+  ["Yeongyang-gun", "영양군", "경북"],
+  ["Yesan-gun", "예산군", "충남"]
+].map(([adm2, name, province, options], index) => ({
+  adm2,
+  name,
+  province,
+  labelWeight: 5,
+  id: `${adm2}-${index}`,
+  ...(options || {})
+}));
+
 function readJson(filePath) {
   return JSON.parse(fs.readFileSync(filePath, "utf8"));
 }
@@ -501,6 +593,8 @@ function buildPlaces(provinces) {
     });
   }
 
+  places.push(...buildCountyPlacesFromAdmin(provinces, matchedBasePlaces));
+
   for (const place of data.places) {
     if (!isMajorPlaceKind(place.kind) || matchedBasePlaces.has(normalizeName(place.name))) continue;
     if (isDedicatedIslandPlace(place.name) || place.kind === "island") continue;
@@ -516,6 +610,85 @@ function buildPlaces(provinces) {
   }
 
   return dedupePlaces(places).sort((a, b) => (a.labelWeight || 9) - (b.labelWeight || 9) || a.name.localeCompare(b.name));
+}
+
+function buildCountyPlacesFromAdmin(provinces, matchedBasePlaces) {
+  const seedGroups = new Map();
+  for (const seed of countySeeds) {
+    if (!seedGroups.has(seed.adm2)) seedGroups.set(seed.adm2, []);
+    seedGroups.get(seed.adm2).push(seed);
+  }
+
+  const groups = new Map();
+  for (const feature of readJson(hdxPlacesPath).features || []) {
+    if (feature.geometry?.type !== "Point") continue;
+    const props = feature.properties || {};
+    const seeds = seedGroups.get(props.adm2_name);
+    if (!seeds) continue;
+
+    const matchingSeeds = seeds.filter((seed) => !seed.sourceAdm1s || seed.sourceAdm1s.includes(props.adm1_name));
+    if (!matchingSeeds.length) continue;
+
+    const [lon, lat] = feature.geometry.coordinates || [];
+    if (!Number.isFinite(lon) || !Number.isFinite(lat)) continue;
+    const point = toWorld(lon, lat);
+    if (!pointInProvinces(point, provinces)) continue;
+
+    for (const seed of matchingSeeds) {
+      const group = groups.get(seed.id) || { seed, lons: [], lats: [] };
+      group.lons.push(lon);
+      group.lats.push(lat);
+      groups.set(seed.id, group);
+    }
+  }
+
+  const countyPlaces = [];
+  const usedSeedIds = new Set();
+  for (const group of groups.values()) {
+    if (!group.lons.length || !group.lats.length) continue;
+    const lon = median(group.lons);
+    const lat = median(group.lats);
+    const place = createCountyPlace(group.seed, lon, lat, "HOT/HDX adm2 centroid", provinces, matchedBasePlaces);
+    if (!place) continue;
+    countyPlaces.push(place);
+    usedSeedIds.add(group.seed.id);
+  }
+
+  for (const seed of countySeeds) {
+    if (usedSeedIds.has(seed.id)) continue;
+    if (!Number.isFinite(seed.lon) || !Number.isFinite(seed.lat)) continue;
+    const place = createCountyPlace(seed, seed.lon, seed.lat, "curated county fallback", provinces, matchedBasePlaces);
+    if (place) countyPlaces.push(place);
+  }
+
+  return countyPlaces;
+}
+
+function createCountyPlace(seed, lon, lat, source, provinces, matchedBasePlaces) {
+  const baseName = seed.name.replace(/\([^)]*\)/g, "");
+  const existing = existingByName.get(normalizeName(seed.name)) || (!seed.sourceAdm1s ? existingByName.get(normalizeName(baseName)) : null);
+  const resolvedLon = existing?.lon ?? lon;
+  const resolvedLat = existing?.lat ?? lat;
+  const point = toWorld(resolvedLon, resolvedLat);
+  if (!pointInProvinces(point, provinces)) return null;
+
+  matchedBasePlaces.add(normalizeName(seed.name));
+  matchedBasePlaces.add(normalizeName(baseName));
+  if (existing) matchedBasePlaces.add(normalizeName(existing.name));
+
+  return {
+    id: `county-${slugify(seed.id)}`,
+    name: seed.name,
+    kind: "county",
+    province: seed.province,
+    lon: round(resolvedLon),
+    lat: round(resolvedLat),
+    icon: existing?.icon || seed.icon || iconForCounty(seed),
+    motif: existing?.motif || seed.motif || countyMotif(seed),
+    labelWeight: existing?.labelWeight || seed.labelWeight || 5,
+    point: roundPoint(point),
+    source
+  };
 }
 
 function buildIslands() {
@@ -1009,6 +1182,23 @@ function iconForName(text) {
   return "government";
 }
 
+function iconForCounty(seed) {
+  const name = seed.name;
+  if (/울릉|옹진|신안|완도|진도/.test(name)) return "island";
+  if (/강화|기장|울주|태안|고흥|강진|해남|영광|무안|보성|장흥|영덕|울진|양양|남해|고성/.test(name)) return "wave";
+  if (/가평|평창|정선|인제|양구|화천|홍천|횡성|철원|단양|영월|봉화|청송|영양|무주|장수|함양|산청|구례|곡성/.test(name)) return "mountain";
+  if (/달성|군위|칠곡|고령|성주|창녕|함안|의령|합천|고창|부안|예산|홍성/.test(name)) return "field";
+  return "government";
+}
+
+function countyMotif(seed) {
+  const name = seed.name;
+  if (/울릉|옹진|신안|완도|진도/.test(name)) return "섬과 해안";
+  if (/강화|기장|울주|태안|고흥|강진|해남|영광|무안|보성|장흥|영덕|울진|양양|남해|고성/.test(name)) return "해안 군";
+  if (/가평|평창|정선|인제|양구|화천|홍천|횡성|철원|단양|영월|봉화|청송|영양|무주|장수|함양|산청|구례|곡성/.test(name)) return "산지 군";
+  return "군 대표 지역";
+}
+
 function provinceLabelPoint(province) {
   let best = province.rings[0];
   let bestArea = 0;
@@ -1147,6 +1337,18 @@ function round(value) {
   return Math.round(value * 10) / 10;
 }
 
+function median(values) {
+  const sorted = values.filter(Number.isFinite).sort((a, b) => a - b);
+  return sorted[Math.floor(sorted.length / 2)];
+}
+
+function slugify(value) {
+  return String(value || "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/(^-|-$)/g, "");
+}
+
 function radians(value) {
   return (value * Math.PI) / 180;
 }
@@ -1181,7 +1383,7 @@ const overlays = {
       "ArcGIS OSM Asia Landuse field GeoJSON query",
       "Natural Earth Admin 0 Countries 1:10m GeoJSON"
     ],
-    note: "Road, river, rail, city, peak, island, national park, and field overlays are OSM-derived from HOT/HDX and ArcGIS services with curated coordinate fallbacks where OSM point coverage is sparse. Province boundaries use SGIS because a compact OSM admin-boundary export was not available in the current source set. Country land background for South and North Korea uses Natural Earth Admin 0 country polygons.",
+    note: "Road, river, rail, city/county, peak, island, national park, and field overlays are OSM-derived from HOT/HDX and ArcGIS services with curated coordinate fallbacks where OSM point coverage is sparse. Province boundaries use SGIS because a compact OSM admin-boundary export was not available in the current source set. Country land background for South and North Korea uses Natural Earth Admin 0 country polygons.",
     coordinateSpace: "app base canvas pixels"
   },
   countryLand,

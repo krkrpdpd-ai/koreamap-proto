@@ -354,6 +354,34 @@ const majorRailwayStationLocationHints = new Map([
   ["부전", /busan|부산/i]
 ]);
 
+const trainRailwayStationNames = new Set([
+  ...majorRailwayStationNames,
+  "구포",
+  "사상",
+  "신해운대",
+  "센텀",
+  "기장",
+  "일광",
+  "송정",
+  "서대구",
+  "회기",
+  "왕십리",
+  "옥수",
+  "공덕",
+  "홍대입구",
+  "디지털미디어시티",
+  "가좌",
+  "신촌",
+  "노량진",
+  "운서",
+  "청라국제도시",
+  "영종",
+  "계양"
+]);
+
+const urbanRailOnlyProvinceNames = new Set(["Seoul", "Busan", "Daegu", "Incheon", "Gwangju", "Daejeon"]);
+const nonTrainStationPattern = /모노레일|승강장|탑승장|케이블카|리프트|관광|굴|monorail|platform|lower|upper|cave/i;
+
 function readJson(filePath) {
   return JSON.parse(fs.readFileSync(filePath, "utf8"));
 }
@@ -774,8 +802,9 @@ function buildRailways(provinces) {
   return stitchMajorRailwayGaps(mergeLines(dedupeLines(raw), 20, { genericNames: new Set(["rail", "railway", "subway", "light_rail", "tram"]) }));
 }
 
-function buildRailwayStations(provinces) {
+function buildRailwayStations(provinces, railways) {
   const stations = [];
+  const referenceRailways = railways.filter(isStationReferenceRailway);
   for (const feature of readJson(hdxRailwaysPath).features || []) {
     const props = feature.properties || {};
     if (props.railway !== "station") continue;
@@ -788,6 +817,7 @@ function buildRailwayStations(provinces) {
 
     const point = toWorld(lonLat[0], lonLat[1]);
     if (!pointInProvinces(point, provinces)) continue;
+    if (!isTrainRailwayStation(name, props, point, referenceRailways)) continue;
 
     stations.push({
       id: String(props.id || `station-${stations.length}`),
@@ -807,6 +837,37 @@ function buildRailwayStations(provinces) {
   }
 
   return dedupeStations(stations).sort((a, b) => (a.labelWeight || 9) - (b.labelWeight || 9) || a.name.localeCompare(b.name, "ko"));
+}
+
+function isStationReferenceRailway(railway) {
+  return railway.class === "rail" && railwayGapTolerance(canonicalRailwayName(railway.name)) > 0 && (railway.lengthKm || 0) >= 18 && railway.path?.length >= 2;
+}
+
+function isTrainRailwayStation(name, props, point, referenceRailways) {
+  const compact = String(name || "").replace(/\s+/g, "");
+  if (nonTrainStationPattern.test([name, props.name_en, props.name_ko, props.name_latin].filter(Boolean).join(" "))) return false;
+  if (isMajorRailwayStation(compact, props) || isKnownTrainRailwayStation(compact, props)) return true;
+  if (urbanRailOnlyProvinceNames.has(props.adm1_name)) return false;
+  return nearestRailwayDistance(point, referenceRailways, 3.25) <= 3.25;
+}
+
+function isKnownTrainRailwayStation(compactName, props) {
+  if (!trainRailwayStationNames.has(compactName)) return false;
+  const hint = majorRailwayStationLocationHints.get(compactName);
+  if (!hint) return true;
+  return hint.test([props.adm1_name, props.adm2_name, props.addr_city].filter(Boolean).join(" "));
+}
+
+function nearestRailwayDistance(point, railways, limit = Infinity) {
+  let best = Infinity;
+  for (const railway of railways) {
+    for (let i = 1; i < railway.path.length; i++) {
+      const distance = distanceToSegment(point, railway.path[i - 1], railway.path[i]);
+      if (distance < best) best = distance;
+      if (best <= limit) return best;
+    }
+  }
+  return best;
 }
 
 function stationLonLat(geometry) {
@@ -1839,7 +1900,7 @@ const islands = buildIslands();
 const roads = buildRoads(provinces);
 const rivers = buildRivers(provinces);
 const railways = buildRailways(provinces);
-const railwayStations = buildRailwayStations(provinces);
+const railwayStations = buildRailwayStations(provinces, railways);
 const fields = buildFields(provinces);
 const nationalParks = buildNationalParks();
 const peaks = buildPeaks(provinces);
@@ -1859,7 +1920,7 @@ const overlays = {
       "ArcGIS OSM Asia Landuse field GeoJSON query",
       "Natural Earth Admin 0 Countries 1:10m GeoJSON"
     ],
-    note: "Road, river, rail, city/county, peak, island, national park, and field overlays are OSM-derived from HOT/HDX and ArcGIS services with curated coordinate fallbacks where OSM point coverage is sparse. Province boundaries use SGIS because a compact OSM admin-boundary export was not available in the current source set. Country land background for South Korea, North Korea, and nearby visible Japanese land uses Natural Earth Admin 0 country polygons.",
+    note: "Road, river, rail, city/county, peak, island, national park, and field overlays are OSM-derived from HOT/HDX and ArcGIS services with curated coordinate fallbacks where OSM point coverage is sparse. Railway station points are filtered to remove subway-only, monorail, and tourist platform entries. Province boundaries use SGIS because a compact OSM admin-boundary export was not available in the current source set. Country land background for South Korea, North Korea, and nearby visible Japanese land uses Natural Earth Admin 0 country polygons.",
     coordinateSpace: "app base canvas pixels"
   },
   countryLand,

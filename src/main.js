@@ -45,7 +45,6 @@
   const kmPerDegLon = 111.32 * Math.cos((data.meta.midLat * Math.PI) / 180);
   const margin = 70;
   const fixedIconScale = 1.28;
-  const playerSpriteScale = 0.1;
   const mapWidth = Math.ceil(((bounds.east - bounds.west) * kmPerDegLon / tileKm) * tilePx) + margin * 2;
   const mapHeight = Math.ceil(((bounds.north - bounds.south) * kmPerDegLat / tileKm) * tilePx) + margin * 2;
 
@@ -1512,9 +1511,7 @@
     const step = Math.floor(player.frame / 12) % 2;
     const legA = step === 0 ? 0 : 1;
     target.save();
-    target.translate(x, y);
-    target.scale(playerSpriteScale, playerSpriteScale);
-    target.translate(-9, -18);
+    target.translate(x - 9, y - 18);
     const px = (a, b, w, h, color) => {
       target.fillStyle = color;
       target.fillRect(a, b, w, h);

@@ -19,10 +19,26 @@
           <button id="zoomIn" type="button" title="확대">+</button>
           <button id="zoomReset" type="button" title="기본 배율">1:1</button>
         </div>
-        <label><input id="toggleRoads" type="checkbox" checked> 도로</label>
+        <span class="toolbar-group">
+          <label><input id="toggleRoads" type="checkbox" checked> 도로</label>
+          <label><input id="toggleExpressways" type="checkbox" checked> 고속도로</label>
+          <label><input id="toggleNationalRoads" type="checkbox" checked> 국도</label>
+        </span>
         <label><input id="toggleRailways" type="checkbox" checked> 철도</label>
-        <label><input id="toggleNature" type="checkbox" checked> 자연</label>
-        <label><input id="toggleBoundaries" type="checkbox" checked> 시도 경계</label>
+        <span class="toolbar-group">
+          <label><input id="toggleNature" type="checkbox" checked> 자연</label>
+          <label><input id="toggleMountains" type="checkbox" checked> 산</label>
+          <label><input id="toggleRivers" type="checkbox" checked> 강</label>
+          <label><input id="toggleLakes" type="checkbox" checked> 호수</label>
+          <label><input id="toggleNationalParks" type="checkbox" checked> 국립공원</label>
+        </span>
+        <span class="toolbar-group">
+          <label><input id="toggleProvinces" type="checkbox" checked> 시도</label>
+          <label><input id="toggleCities" type="checkbox" checked> 시</label>
+          <label><input id="toggleCounties" type="checkbox" checked> 군</label>
+          <label><input id="toggleIslands" type="checkbox" checked> 섬</label>
+        </span>
+        <label><input id="toggleBoundaries" type="checkbox"> 시도 경계</label>
         <label><input id="toggleLabels" type="checkbox" checked> 라벨</label>
         <label><input id="toggleGrid" type="checkbox" checked> 격자</label>
       </div>

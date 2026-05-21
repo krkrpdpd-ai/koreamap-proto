@@ -10,9 +10,19 @@
 
   const state = {
     showRoads: true,
+    showExpressways: true,
+    showNationalRoads: true,
     showRailways: true,
     showNature: true,
-    showBoundaries: true,
+    showMountains: true,
+    showRivers: true,
+    showLakes: true,
+    showNationalParks: true,
+    showProvinces: true,
+    showCities: true,
+    showCounties: true,
+    showIslands: true,
+    showBoundaries: false,
     showLabels: true,
     showGrid: true,
     zoom: 1,
@@ -294,14 +304,18 @@
     drawSea(staticCtx);
     if (state.showGrid) drawGrid(staticCtx);
     drawLand(staticCtx);
-    if (state.showNature) {
+    if (isNatureLayerVisible("showNationalParks")) {
       drawTerrain(staticCtx);
+    }
+    if (isNatureLayerVisible("showRivers")) {
       drawRivers(staticCtx);
+    }
+    if (isNatureLayerVisible("showLakes")) {
       drawPointFeatures(staticCtx, data.lakes, 1);
     }
     if (state.showRoads) drawRoads(staticCtx);
     if (state.showRailways) drawRailways(staticCtx);
-    if (state.showNature) drawMajorMountains(staticCtx);
+    if (isNatureLayerVisible("showMountains")) drawMajorMountains(staticCtx);
     if (state.showBoundaries && !real?.provinces?.length) drawProvinceBoundaries(staticCtx);
     drawPlaces(staticCtx);
     drawIslands(staticCtx);
@@ -563,6 +577,7 @@
       return;
     }
     for (const road of data.roads) {
+      if (!isRoadClassEnabled(road)) continue;
       const top = road.type === "expressway" ? palette.expressway : palette.national;
       drawCurvedPixelPath(target, road.points, top, road.type === "expressway" ? 6 : 4, 5, { wiggle: 0.3 });
       if (state.showLabels && road.type === "expressway") {
@@ -647,6 +662,7 @@
   }
 
   function isRoadVisible(road) {
+    if (!isRoadClassEnabled(road)) return false;
     if (state.zoom < 1.05 && road.class === "national" && road.length < 35000) return false;
     if (state.zoom < 1.35 && road.class === "national" && road.length < 12000) return false;
     return true;
@@ -753,6 +769,7 @@
     const sourcePlaces = real?.places?.length ? real.places : data.places;
     const sorted = [...sourcePlaces].sort((a, b) => (b.labelWeight || 9) - (a.labelWeight || 9));
     for (const place of sorted) {
+      if (!isPlaceKindVisible(place)) continue;
       const p = placePoint(place);
       const scale = place.labelWeight <= 1 ? 1.25 : place.labelWeight <= 3 ? 1 : 0.84;
       if (place === state.selectedPlace || place === state.hoverPlace) {
@@ -769,6 +786,7 @@
   }
 
   function drawIslands(target) {
+    if (!state.showIslands) return;
     if (!selectableIslands.length) return;
     const islands = [...selectableIslands].sort((a, b) => (b.labelWeight || 9) - (a.labelWeight || 9));
     for (const island of islands) {
@@ -1372,10 +1390,11 @@
     let best = null;
     let bestScore = radius;
     const sourcePlaces = real?.places?.length ? real.places : data.places;
-    const selectablePlaces = [...sourcePlaces, ...selectableIslands];
-    if (state.showNature) {
-      selectablePlaces.push(...majorMountains, ...(real?.nationalParks || []).filter(isNationalParkVisible), ...data.lakes);
-    }
+    const selectablePlaces = sourcePlaces.filter(isPlaceKindVisible);
+    if (state.showIslands) selectablePlaces.push(...selectableIslands);
+    if (isNatureLayerVisible("showMountains")) selectablePlaces.push(...majorMountains);
+    if (isNatureLayerVisible("showNationalParks")) selectablePlaces.push(...(real?.nationalParks || []).filter(isNationalParkVisible));
+    if (isNatureLayerVisible("showLakes")) selectablePlaces.push(...data.lakes);
 
     function consider(candidate, distance, priority = 0) {
       const score = distance + priority;
@@ -1401,7 +1420,7 @@
       }
     }
 
-    if (state.showNature && real?.rivers?.length) {
+    if (isNatureLayerVisible("showRivers") && real?.rivers?.length) {
       for (const river of real.rivers) {
         const tolerance = Math.max(((river.displayWidth || 4) + 6) / state.zoom, 2.5);
         const d = distanceToPath([x, y], river.path, tolerance);
@@ -1490,20 +1509,70 @@
     return Math.max(min, Math.min(max, value));
   }
 
+  function isNatureLayerVisible(key) {
+    return state.showNature && state[key];
+  }
+
+  function isPlaceKindVisible(place) {
+    if (place.kind === "province") return state.showProvinces;
+    if (place.kind === "county") return state.showCounties;
+    if (place.kind === "island") return state.showIslands;
+    return state.showCities;
+  }
+
+  function isRoadClassEnabled(road) {
+    if (!state.showRoads) return false;
+    if (road.class === "expressway" || road.type === "expressway") return state.showExpressways;
+    if (road.class === "national" || road.type === "national") return state.showNationalRoads;
+    return true;
+  }
+
   function setToggle(id, key) {
     const el = document.getElementById(id);
+    if (!el) return;
+    el.checked = state[key];
     el.addEventListener("change", () => {
       state[key] = el.checked;
       state.staticDirty = true;
+      syncToggleGroups();
     });
   }
 
+  function syncToggleGroups() {
+    const groups = {
+      toggleRoads: ["toggleExpressways", "toggleNationalRoads"],
+      toggleNature: ["toggleMountains", "toggleRivers", "toggleLakes", "toggleNationalParks"]
+    };
+
+    for (const [parentId, childIds] of Object.entries(groups)) {
+      const parent = document.getElementById(parentId);
+      const disabled = parent ? !parent.checked : false;
+      for (const childId of childIds) {
+        const child = document.getElementById(childId);
+        if (!child) continue;
+        child.disabled = disabled;
+        child.closest("label")?.classList.toggle("disabled", disabled);
+      }
+    }
+  }
+
   setToggle("toggleRoads", "showRoads");
+  setToggle("toggleExpressways", "showExpressways");
+  setToggle("toggleNationalRoads", "showNationalRoads");
   setToggle("toggleRailways", "showRailways");
   setToggle("toggleNature", "showNature");
+  setToggle("toggleMountains", "showMountains");
+  setToggle("toggleRivers", "showRivers");
+  setToggle("toggleLakes", "showLakes");
+  setToggle("toggleNationalParks", "showNationalParks");
+  setToggle("toggleProvinces", "showProvinces");
+  setToggle("toggleCities", "showCities");
+  setToggle("toggleCounties", "showCounties");
+  setToggle("toggleIslands", "showIslands");
   setToggle("toggleBoundaries", "showBoundaries");
   setToggle("toggleLabels", "showLabels");
   setToggle("toggleGrid", "showGrid");
+  syncToggleGroups();
 
   document.getElementById("zoomOut").addEventListener("click", () => setZoom(state.zoom - 0.15));
   document.getElementById("zoomIn").addEventListener("click", () => setZoom(state.zoom + 0.15));

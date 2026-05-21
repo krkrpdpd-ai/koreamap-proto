@@ -66,6 +66,17 @@ body {
   gap: 8px;
 }
 
+.toolbar-group {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+  padding: 3px;
+  border: 1px solid rgba(63, 77, 85, 0.74);
+  border-radius: 8px;
+  background: rgba(38, 49, 58, 0.42);
+}
+
 .zoom-controls {
   display: inline-grid;
   grid-template-columns: 34px 58px 34px 42px;
@@ -114,6 +125,15 @@ body {
 
 .toolbar input {
   accent-color: #79c26a;
+}
+
+.toolbar label.disabled {
+  color: #78848a;
+  background: #192128;
+}
+
+.toolbar label.disabled input {
+  accent-color: #78848a;
 }
 
 .app-shell {

@@ -284,6 +284,76 @@ const majorRailwayGapTolerances = new Map([
   ["인천국제공항선", 65]
 ]);
 
+const majorRailwayStationNames = new Set([
+  "서울",
+  "용산",
+  "영등포",
+  "청량리",
+  "상봉",
+  "수서",
+  "행신",
+  "광명",
+  "수원",
+  "평택",
+  "평택지제",
+  "천안",
+  "천안아산",
+  "오송",
+  "조치원",
+  "대전",
+  "서대전",
+  "공주",
+  "익산",
+  "전주",
+  "정읍",
+  "광주송정",
+  "광주",
+  "목포",
+  "순천",
+  "여수엑스포",
+  "여천",
+  "동대구",
+  "대구",
+  "김천구미",
+  "구미",
+  "경주",
+  "신경주",
+  "울산",
+  "태화강",
+  "부산",
+  "부전",
+  "마산",
+  "창원",
+  "창원중앙",
+  "진주",
+  "포항",
+  "강릉",
+  "동해",
+  "원주",
+  "만종",
+  "제천",
+  "영주",
+  "안동",
+  "태백",
+  "춘천",
+  "남춘천",
+  "가평",
+  "의정부",
+  "인천공항1터미널",
+  "인천공항2터미널",
+  "검암",
+  "김포공항"
+]);
+
+const majorRailwayStationLocationHints = new Map([
+  ["마산", /changwon|south gyeongsang|창원|경남/i],
+  ["용산", /yongsan|seoul|서울/i],
+  ["광주", /gwangju|광주/i],
+  ["대구", /daegu|대구/i],
+  ["경주", /gyeongju|경주/i],
+  ["부전", /busan|부산/i]
+]);
+
 function readJson(filePath) {
   return JSON.parse(fs.readFileSync(filePath, "utf8"));
 }
@@ -702,6 +772,107 @@ function buildRailways(provinces) {
     }
   }
   return stitchMajorRailwayGaps(mergeLines(dedupeLines(raw), 20, { genericNames: new Set(["rail", "railway", "subway", "light_rail", "tram"]) }));
+}
+
+function buildRailwayStations(provinces) {
+  const stations = [];
+  for (const feature of readJson(hdxRailwaysPath).features || []) {
+    const props = feature.properties || {};
+    if (props.railway !== "station") continue;
+
+    const lonLat = stationLonLat(feature.geometry);
+    if (!lonLat) continue;
+
+    const name = pickName(props);
+    if (!name) continue;
+
+    const point = toWorld(lonLat[0], lonLat[1]);
+    if (!pointInProvinces(point, provinces)) continue;
+
+    stations.push({
+      id: String(props.id || `station-${stations.length}`),
+      name,
+      nameEn: props.name_en || props.name_latin || null,
+      type: "railwayStation",
+      kind: "railwayStation",
+      icon: "station",
+      lon: round(lonLat[0]),
+      lat: round(lonLat[1]),
+      point: roundPoint(point),
+      province: props.adm1_name || null,
+      city: props.adm2_name || props.addr_city || null,
+      labelWeight: stationLabelWeight(name, props),
+      source: "HOT/HDX OSM railways station"
+    });
+  }
+
+  return dedupeStations(stations).sort((a, b) => (a.labelWeight || 9) - (b.labelWeight || 9) || a.name.localeCompare(b.name, "ko"));
+}
+
+function stationLonLat(geometry) {
+  if (!geometry) return null;
+  if (geometry.type === "Point") return geometry.coordinates;
+
+  const rings = geoPolygonRings(geometry);
+  if (!rings.length) return null;
+
+  let bestRing = null;
+  let bestArea = 0;
+  for (const ring of rings) {
+    const world = ring.map(([lon, lat]) => toWorld(lon, lat));
+    const area = ringArea(world);
+    if (area > bestArea) {
+      bestArea = area;
+      bestRing = ring;
+    }
+  }
+  if (!bestRing?.length) return null;
+
+  const total = bestRing.reduce(
+    (acc, coord) => {
+      acc[0] += coord[0];
+      acc[1] += coord[1];
+      return acc;
+    },
+    [0, 0]
+  );
+  return [total[0] / bestRing.length, total[1] / bestRing.length];
+}
+
+function stationLabelWeight(name, props) {
+  const compact = String(name || "").replace(/\s+/g, "");
+  if (isMajorRailwayStation(compact, props)) return 1;
+  if (props.addr_city || props.adm2_name?.endsWith("-si")) return 4;
+  return 6;
+}
+
+function isMajorRailwayStation(compactName, props) {
+  if (!majorRailwayStationNames.has(compactName)) return false;
+  const hint = majorRailwayStationLocationHints.get(compactName);
+  if (!hint) return true;
+  return hint.test([props.adm1_name, props.adm2_name, props.addr_city].filter(Boolean).join(" "));
+}
+
+function dedupeStations(stations) {
+  const out = [];
+  for (const station of stations) {
+    const key = normalizeName(station.name);
+    const duplicate = out.find(
+      (candidate) =>
+        normalizeName(candidate.name) === key &&
+        pointDistance(candidate.point, station.point) < 10
+    );
+
+    if (!duplicate) {
+      out.push(station);
+      continue;
+    }
+
+    if ((station.labelWeight || 9) < (duplicate.labelWeight || 9)) {
+      Object.assign(duplicate, station);
+    }
+  }
+  return out;
 }
 
 function stitchMajorRailwayGaps(railways) {
@@ -1668,6 +1839,7 @@ const islands = buildIslands();
 const roads = buildRoads(provinces);
 const rivers = buildRivers(provinces);
 const railways = buildRailways(provinces);
+const railwayStations = buildRailwayStations(provinces);
 const fields = buildFields(provinces);
 const nationalParks = buildNationalParks();
 const peaks = buildPeaks(provinces);
@@ -1679,7 +1851,7 @@ const overlays = {
     sources: [
       "SGIS province boundary GeoJSON via statgarten",
       "HOT/HDX South Korea populated places OSM GeoJSON export",
-      "HOT/HDX South Korea railways OSM GeoJSON export",
+      "HOT/HDX South Korea railways and stations OSM GeoJSON export",
       "ArcGIS OSM Asia Highways Korea major-route GeoJSON query",
       "ArcGIS OSM Asia Waterways GeoJSON query",
       "ArcGIS OSM Asia POIs peak GeoJSON query",
@@ -1697,6 +1869,7 @@ const overlays = {
   roads,
   rivers,
   railways,
+  railwayStations,
   fields,
   nationalParks,
   peaks,
@@ -1714,6 +1887,7 @@ console.log(
     roads: roads.length,
     rivers: rivers.length,
     railways: railways.length,
+    railwayStations: railwayStations.length,
     fields: fields.length,
     nationalParks: nationalParks.length,
     peaks: peaks.length,

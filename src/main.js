@@ -13,6 +13,7 @@
     showExpressways: true,
     showNationalRoads: true,
     showRailways: true,
+    showRailwayStations: true,
     showNature: true,
     showMountains: true,
     showRivers: true,
@@ -92,6 +93,7 @@
     nationalDark: "#683238",
     rail: "#d8d0b0",
     railDark: "#252b30",
+    station: "#f2d27c",
     subway: "#b7a6dc",
     boundary: "rgba(244, 241, 222, 0.9)",
     boundaryShadow: "rgba(23, 32, 42, 0.82)",
@@ -599,8 +601,9 @@
   }
 
   function drawRailways(target) {
-    if (!real?.railways?.length) return;
-    drawRealRailways(target);
+    if (!real?.railways?.length && !real?.railwayStations?.length) return;
+    if (real?.railways?.length) drawRealRailways(target);
+    if (state.showRailwayStations && real?.railwayStations?.length) drawRailwayStations(target);
   }
 
   function drawProvinceBoundaries(target) {
@@ -714,6 +717,42 @@
     }
 
     target.restore();
+  }
+
+  function drawRailwayStations(target) {
+    const stations = [...real.railwayStations]
+      .filter(isRailwayStationVisible)
+      .sort((a, b) => (b.labelWeight || 9) - (a.labelWeight || 9));
+    let labels = 0;
+
+    target.save();
+    for (const station of stations) {
+      const p = { x: station.point[0], y: station.point[1] };
+      if (station === state.selectedPlace || station === state.hoverPlace) {
+        const markerSize = 26 / state.zoom;
+        target.fillStyle = station === state.selectedPlace ? palette.selected : "#bdf3ff";
+        target.fillRect(Math.round(p.x - markerSize / 2), Math.round(p.y - markerSize / 2), markerSize, markerSize);
+      }
+
+      drawIcon(target, "station", p.x, p.y, station.labelWeight <= 1 ? 0.72 : 0.54, true);
+
+      const showStationLabel =
+        (state.zoom >= 1.15 && station.labelWeight <= 1) ||
+        (state.zoom >= 1.75 && station.labelWeight <= 4) ||
+        (state.zoom >= 2.65 && station.labelWeight <= 6);
+      if (state.showLabels && showStationLabel && labels < 38) {
+        drawLabel(target, station.name, p.x + 8, p.y - 2, station.labelWeight <= 1 ? 10 : 9);
+        labels += 1;
+      }
+    }
+    target.restore();
+  }
+
+  function isRailwayStationVisible(station) {
+    if (!state.showRailways || !state.showRailwayStations) return false;
+    if (station.labelWeight <= 1) return true;
+    if (station.labelWeight <= 4) return state.zoom >= 1.3;
+    return state.zoom >= 2.1;
   }
 
   function isMajorRailway(rail) {
@@ -1149,6 +1188,16 @@
         px(15, 15, 3, 5, "#9b7950");
         px(9, 16, 6, 2, "#63c5da");
         break;
+      case "station":
+        px(5, 8, 14, 10, "#252b30");
+        px(6, 7, 12, 10, "#f2d27c");
+        px(8, 9, 3, 3, "#26313a");
+        px(13, 9, 3, 3, "#26313a");
+        px(8, 14, 8, 2, "#9b7950");
+        px(5, 18, 14, 2, "#d8d0b0");
+        px(7, 20, 2, 2, "#252b30");
+        px(15, 20, 2, 2, "#252b30");
+        break;
       case "island":
       case "lighthouse":
         px(5, 16, 14, 4, "#c8b05a");
@@ -1377,6 +1426,15 @@
       return;
     }
 
+    if (place.type === "railwayStation") {
+      inspectorTitle.textContent = place.name;
+      const nameEn = place.nameEn ? ` / ${place.nameEn}` : "";
+      const area = [place.province, place.city].filter(Boolean).join(" / ");
+      inspectorBody.textContent = `철도역${nameEn}. HOT/HDX OSM 철도역 포인트 기반 위치입니다.${area ? ` 위치 분류: ${area}.` : ""}`;
+      state.staticDirty = true;
+      return;
+    }
+
     if (place.kind === "nationalPark") {
       inspectorTitle.textContent = place.name;
       inspectorBody.textContent = describeNationalPark(place);
@@ -1464,6 +1522,16 @@
       const p = placePoint(place);
       const d = Math.hypot(p.x - x, p.y - y);
       if (d < radius) consider(place, d);
+    }
+
+    if (state.showRailways && state.showRailwayStations && real?.railwayStations?.length) {
+      for (const station of real.railwayStations) {
+        if (!isRailwayStationVisible(station)) continue;
+        const p = placePoint(station);
+        const stationRadius = Math.max(radius, 16 / state.zoom);
+        const d = Math.hypot(p.x - x, p.y - y);
+        if (d < stationRadius) consider(station, d, station.labelWeight <= 1 ? 0 : 1.5 / state.zoom);
+      }
     }
 
     const linePriority = 4 / state.zoom;
@@ -1597,6 +1665,7 @@
   function syncToggleGroups() {
     const groups = {
       toggleRoads: ["toggleExpressways", "toggleNationalRoads"],
+      toggleRailways: ["toggleRailwayStations"],
       toggleNature: ["toggleMountains", "toggleRivers", "toggleLakes", "toggleNationalParks"]
     };
 
@@ -1616,6 +1685,7 @@
   setToggle("toggleExpressways", "showExpressways");
   setToggle("toggleNationalRoads", "showNationalRoads");
   setToggle("toggleRailways", "showRailways");
+  setToggle("toggleRailwayStations", "showRailwayStations");
   setToggle("toggleNature", "showNature");
   setToggle("toggleMountains", "showMountains");
   setToggle("toggleRivers", "showRivers");

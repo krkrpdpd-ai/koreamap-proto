@@ -200,6 +200,12 @@ body {
   );
 }
 
+.station {
+  background:
+    linear-gradient(#252b30 0 0) 50% 50% / 12px 6px no-repeat,
+    var(--field);
+}
+
 .river {
   background: var(--river);
 }

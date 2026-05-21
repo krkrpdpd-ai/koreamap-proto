@@ -159,7 +159,13 @@
   };
 
   const majorMountains = buildMajorMountains();
-  const northKoreaLand = real?.countryLand?.find((country) => country.id === "PRK") || null;
+  const inaccessibleCountryIds = new Set(["PRK", "JPN"]);
+  const inaccessibleCountryLand = (real?.countryLand || []).filter((country) => inaccessibleCountryIds.has(country.id));
+  const countryBackgroundLabels = [
+    { id: "PRK", name: "북한", lon: 126.9, lat: 38.48 },
+    { id: "JPN", name: "일본", lon: 130.52, lat: 33.68 },
+    { id: "JPN", name: "대마도", lon: 129.3, lat: 34.42 }
+  ];
 
   const islandDetails = {
     baengnyeongdo: "서해 북쪽 접경 해역의 대표 섬으로, 해안 절벽과 기암 지형이 두드러집니다.",
@@ -411,7 +417,7 @@
         const centerY = y + tilePx / 2;
         if (!isRealLand(centerX, centerY)) continue;
         const bit = pseudo(Math.floor(x / tilePx), Math.floor(y / tilePx));
-        const inaccessible = isNorthKoreaLand(centerX, centerY);
+        const inaccessible = isInaccessibleCountryLand(centerX, centerY);
         target.fillStyle = inaccessible ? (bit > 0.58 ? "#8d9490" : "#68706d") : bit > 0.58 ? "#5dae67" : palette.landDark;
         target.fillRect(x + 3, y + 4, 4, 4);
         if (bit > 0.82) target.fillRect(x + 11, y + 10, 3, 3);
@@ -425,7 +431,7 @@
     if (!real?.countryLand?.length) return;
 
     for (const country of real.countryLand) {
-      const inaccessible = country.id === "PRK";
+      const inaccessible = inaccessibleCountryIds.has(country.id);
       target.fillStyle = inaccessible ? "#747b78" : palette.land;
       target.strokeStyle = inaccessible ? "rgba(191, 198, 194, 0.5)" : "rgba(217, 209, 139, 0.58)";
       target.lineWidth = 1.2 / state.zoom;
@@ -433,8 +439,12 @@
     }
 
     if (state.showLabels) {
-      const labelPoint = toWorld([126.9, 38.48]);
-      drawLabel(target, "북한", labelPoint.x, labelPoint.y, 11);
+      const countryIds = new Set(real.countryLand.map((country) => country.id));
+      for (const label of countryBackgroundLabels) {
+        if (!countryIds.has(label.id)) continue;
+        const labelPoint = toWorld([label.lon, label.lat]);
+        drawLabel(target, label.name, labelPoint.x, labelPoint.y, 11);
+      }
     }
   }
 
@@ -1497,8 +1507,8 @@
     );
   }
 
-  function isNorthKoreaLand(x, y) {
-    return !!northKoreaLand?.rings.some((ring) => pointInPolygon([x, y], ring));
+  function isInaccessibleCountryLand(x, y) {
+    return inaccessibleCountryLand.some((country) => country.rings.some((ring) => pointInPolygon([x, y], ring)));
   }
 
   function pointInPolygon(point, polygon) {

@@ -374,7 +374,7 @@ function buildSgisProvinces() {
 function buildCountryLand() {
   if (!fs.existsSync(naturalEarthCountriesPath)) return [];
 
-  const accepted = new Set(["KOR", "PRK"]);
+  const accepted = new Set(["KOR", "PRK", "JPN"]);
   const geojson = readJson(naturalEarthCountriesPath);
   return (geojson.features || [])
     .filter((feature) => accepted.has(feature.properties?.ISO_A3))
@@ -1687,7 +1687,7 @@ const overlays = {
       "ArcGIS OSM Asia Landuse field GeoJSON query",
       "Natural Earth Admin 0 Countries 1:10m GeoJSON"
     ],
-    note: "Road, river, rail, city/county, peak, island, national park, and field overlays are OSM-derived from HOT/HDX and ArcGIS services with curated coordinate fallbacks where OSM point coverage is sparse. Province boundaries use SGIS because a compact OSM admin-boundary export was not available in the current source set. Country land background for South and North Korea uses Natural Earth Admin 0 country polygons.",
+    note: "Road, river, rail, city/county, peak, island, national park, and field overlays are OSM-derived from HOT/HDX and ArcGIS services with curated coordinate fallbacks where OSM point coverage is sparse. Province boundaries use SGIS because a compact OSM admin-boundary export was not available in the current source set. Country land background for South Korea, North Korea, and nearby visible Japanese land uses Natural Earth Admin 0 country polygons.",
     coordinateSpace: "app base canvas pixels"
   },
   countryLand,

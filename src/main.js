@@ -1,6 +1,7 @@
 (() => {
   const data = window.KOREA_MAP_DATA;
   const real = window.KOREA_REAL_OVERLAYS || null;
+  const maritime = window.KOREA_MARITIME_DATA || { ports: [], seaRoutes: [] };
   const canvas = document.getElementById("mapCanvas");
   const ctx = canvas.getContext("2d");
   const frame = document.querySelector(".map-frame");
@@ -15,6 +16,9 @@
     showRestAreas: true,
     showRailways: true,
     showRailwayStations: true,
+    showMaritime: true,
+    showPorts: true,
+    showSeaRoutes: true,
     showNature: true,
     showMountains: true,
     showRivers: true,
@@ -98,6 +102,10 @@
     rail: "#d8d0b0",
     railDark: "#252b30",
     station: "#f2d27c",
+    seaRoute: "#9be2ed",
+    seaRouteDark: "#2b7fa0",
+    port: "#f4f1de",
+    portDark: "#d86048",
     subway: "#b7a6dc",
     boundary: "rgba(244, 241, 222, 0.9)",
     boundaryShadow: "rgba(23, 32, 42, 0.82)",
@@ -215,6 +223,31 @@
       description: islandDetails[island.id] || island.description || `${island.name}은 지도에 표시된 주요 섬입니다.`
     }));
   }
+
+  const maritimePorts = (maritime.ports || []).map((port) => {
+    const p = toWorld([port.lon, port.lat]);
+    return {
+      ...port,
+      type: "port",
+      kind: "port",
+      icon: "port",
+      point: [p.x, p.y]
+    };
+  });
+
+  const maritimeRoutes = (maritime.seaRoutes || []).map((route) => {
+    const path = route.points.map((point) => {
+      const p = toWorld(point);
+      return [p.x, p.y];
+    });
+    return {
+      ...route,
+      type: "seaRoute",
+      kind: "seaRoute",
+      path,
+      lengthKm: geoPathLengthKm(route.points)
+    };
+  });
 
   function buildSelectableRoadRoutes() {
     if (!real?.roads?.length) return [];
@@ -400,9 +433,11 @@
     if (isNatureLayerVisible("showLakes")) {
       drawPointFeatures(staticCtx, data.lakes, 1);
     }
+    if (state.showMaritime && state.showSeaRoutes) drawSeaRoutes(staticCtx);
     if (state.showRoads) drawRoads(staticCtx);
     if (state.showRoads && state.showRestAreas) drawRestAreas(staticCtx);
     if (state.showRailways) drawRailways(staticCtx);
+    if (state.showMaritime && state.showPorts) drawPorts(staticCtx);
     if (isNatureLayerVisible("showMountains")) drawMajorMountains(staticCtx);
     if (state.showBoundaries && !real?.provinces?.length) drawProvinceBoundaries(staticCtx);
     drawPlaces(staticCtx);
@@ -807,6 +842,55 @@
     target.restore();
   }
 
+  function drawSeaRoutes(target) {
+    if (!maritimeRoutes.length) return;
+
+    target.save();
+    target.lineJoin = "round";
+    target.lineCap = "round";
+    for (const route of maritimeRoutes) {
+      if (!isSeaRouteVisible(route)) continue;
+      drawWorldStroke(target, route.path, "rgba(29, 61, 93, 0.82)", 6.5, true);
+      drawDashedWorldStroke(target, route.path, palette.seaRoute, 2.8, true, 10, 7);
+      if (route === state.selectedPlace || route === state.hoverPlace) {
+        drawWorldStroke(target, route.path, route === state.selectedPlace ? palette.selected : "#bdf3ff", 6, true);
+      }
+      if (state.showLabels && shouldShowSeaRouteLabel(route)) {
+        const p = route.path[Math.floor(route.path.length / 2)];
+        drawLabel(target, route.name, p[0] + 10 / state.zoom, p[1] - 6 / state.zoom, route.labelWeight <= 1 ? 10 : 9);
+      }
+    }
+    target.restore();
+  }
+
+  function drawPorts(target) {
+    if (!maritimePorts.length) return;
+
+    target.save();
+    let labels = 0;
+    for (const port of maritimePorts) {
+      if (!isPortVisible(port)) continue;
+      const p = { x: port.point[0], y: port.point[1] };
+      if (port === state.selectedPlace || port === state.hoverPlace) {
+        const markerSize = 30 / state.zoom;
+        target.fillStyle = port === state.selectedPlace ? palette.selected : "#bdf3ff";
+        target.fillRect(Math.round(p.x - markerSize / 2), Math.round(p.y - markerSize / 2), markerSize, markerSize);
+      }
+
+      drawIcon(target, "port", p.x, p.y, port.labelWeight <= 2 ? 0.8 : 0.62, true);
+
+      const showPortLabel =
+        port.labelWeight <= 2 ||
+        (state.zoom >= 1.35 && port.labelWeight <= 3) ||
+        (state.zoom >= 2.2 && port.labelWeight <= 4);
+      if (state.showLabels && showPortLabel && labels < 34) {
+        drawLabel(target, port.name, p.x + 8 / state.zoom, p.y - 2 / state.zoom, port.labelWeight <= 1 ? 10 : 9);
+        labels += 1;
+      }
+    }
+    target.restore();
+  }
+
   function drawRailwayStations(target) {
     const stations = [...real.railwayStations]
       .filter(isRailwayStationVisible)
@@ -879,6 +963,26 @@
     return state.zoom >= 2.3;
   }
 
+  function isPortVisible(port) {
+    if (!state.showMaritime || !state.showPorts) return false;
+    if ((port.labelWeight || 9) <= 2) return true;
+    if ((port.labelWeight || 9) <= 3) return state.zoom >= 1.25;
+    return state.zoom >= 1.8;
+  }
+
+  function isSeaRouteVisible(route) {
+    if (!state.showMaritime || !state.showSeaRoutes) return false;
+    if ((route.labelWeight || 9) <= 2) return true;
+    if ((route.labelWeight || 9) <= 3) return state.zoom >= 1.25;
+    return state.zoom >= 1.65;
+  }
+
+  function shouldShowSeaRouteLabel(route) {
+    if ((route.labelWeight || 9) <= 1) return true;
+    if ((route.labelWeight || 9) <= 2) return state.zoom >= 1.2;
+    return state.zoom >= 1.85;
+  }
+
   function isMajorRailway(rail) {
     return majorRailwayNames.has(rail.name) && (rail.lengthKm || 0) >= 18 && rail.path?.length >= 3;
   }
@@ -893,6 +997,14 @@
     target.strokeStyle = color;
     target.lineWidth = fixedScreenWidth ? width / state.zoom : width;
     target.stroke();
+  }
+
+  function drawDashedWorldStroke(target, points, color, width, fixedScreenWidth = false, dash = 8, gap = 6) {
+    if (points.length < 2) return;
+    target.save();
+    target.setLineDash([dash / state.zoom, gap / state.zoom]);
+    drawWorldStroke(target, points, color, width, fixedScreenWidth);
+    target.restore();
   }
 
   function provinceLabelPoint(province) {
@@ -1331,6 +1443,15 @@
         px(7, 20, 2, 2, "#252b30");
         px(15, 20, 2, 2, "#252b30");
         break;
+      case "port":
+        px(4, 15, 16, 4, palette.portDark);
+        px(6, 11, 12, 4, palette.port);
+        px(8, 8, 8, 3, "#d8d0b0");
+        px(11, 4, 2, 4, "#f2d27c");
+        px(5, 19, 14, 2, palette.seaRouteDark);
+        px(7, 21, 3, 1, palette.seaRoute);
+        px(14, 21, 3, 1, palette.seaRoute);
+        break;
       case "island":
       case "lighthouse":
         px(5, 16, 14, 4, "#c8b05a");
@@ -1582,6 +1703,23 @@
       return;
     }
 
+    if (place.type === "port") {
+      inspectorTitle.textContent = place.name;
+      const region = place.region ? `${place.region}. ` : "";
+      inspectorBody.textContent = `항구. ${region}${place.role || "연안 여객 항구"}입니다. ${place.description || "지도 위 주요 해상 교통 거점으로 표시됩니다."}`;
+      state.staticDirty = true;
+      return;
+    }
+
+    if (place.type === "seaRoute") {
+      inspectorTitle.textContent = place.name;
+      const endpoint = [place.from, place.to].filter(Boolean).join(" → ");
+      const distance = Number.isFinite(place.lengthKm) ? ` 약 ${formatKm(place.lengthKm)}.` : "";
+      inspectorBody.textContent = `뱃길. ${place.category || "대표 여객 항로"}${endpoint ? ` (${endpoint})` : ""}.${distance} ${place.description || "실제 항법용 해도가 아닌 게임 지도용 대표 항로입니다."}`;
+      state.staticDirty = true;
+      return;
+    }
+
     if (place.type === "river") {
       inspectorTitle.textContent = place.name;
       const width = place.widthMeters ? ` 추정 폭은 약 ${place.widthMeters.toLocaleString("ko-KR")}m입니다.` : "";
@@ -1674,6 +1812,27 @@
     return `${value.toLocaleString("ko-KR", { maximumFractionDigits: value >= 10 ? 0 : 1 })}km`;
   }
 
+  function geoPathLengthKm(points) {
+    if (!points || points.length < 2) return 0;
+    let total = 0;
+    for (let i = 1; i < points.length; i++) {
+      total += haversineKm(points[i - 1], points[i]);
+    }
+    return total;
+  }
+
+  function haversineKm(a, b) {
+    const radiusKm = 6371;
+    const lat1 = (a[1] * Math.PI) / 180;
+    const lat2 = (b[1] * Math.PI) / 180;
+    const dLat = ((b[1] - a[1]) * Math.PI) / 180;
+    const dLon = ((b[0] - a[0]) * Math.PI) / 180;
+    const h =
+      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLon / 2) * Math.sin(dLon / 2);
+    return 2 * radiusKm * Math.atan2(Math.sqrt(h), Math.sqrt(1 - h));
+  }
+
   function describeNationalPark(park) {
     if (park.description) return park.description;
     const name = park.name || "국립공원";
@@ -1731,6 +1890,25 @@
     }
 
     const linePriority = 4 / state.zoom;
+    if (state.showMaritime && state.showPorts && maritimePorts.length) {
+      for (const port of maritimePorts) {
+        if (!isPortVisible(port)) continue;
+        const p = placePoint(port);
+        const portRadius = Math.max(radius, 18 / state.zoom);
+        const d = Math.hypot(p.x - x, p.y - y);
+        if (d < portRadius) consider(port, d, -1 / state.zoom);
+      }
+    }
+
+    if (state.showMaritime && state.showSeaRoutes && maritimeRoutes.length) {
+      for (const route of maritimeRoutes) {
+        if (!isSeaRouteVisible(route)) continue;
+        const tolerance = 10 / state.zoom;
+        const d = distanceToPath([x, y], route.path, tolerance);
+        if (d <= tolerance) consider(route, d, linePriority);
+      }
+    }
+
     if (state.showRoads && selectableRoadRoutes.length) {
       for (const route of selectableRoadRoutes) {
         if (!isRoadClassEnabled(route)) continue;
@@ -1873,6 +2051,7 @@
     const groups = {
       toggleRoads: ["toggleExpressways", "toggleNationalRoads", "toggleRestAreas"],
       toggleRailways: ["toggleRailwayStations"],
+      toggleMaritime: ["togglePorts", "toggleSeaRoutes"],
       toggleNature: ["toggleMountains", "toggleRivers", "toggleLakes", "toggleNationalParks"],
       toggleAdmin: ["toggleProvinces", "toggleCities", "toggleCounties", "toggleIslands"]
     };
@@ -1895,6 +2074,9 @@
   setToggle("toggleRestAreas", "showRestAreas");
   setToggle("toggleRailways", "showRailways");
   setToggle("toggleRailwayStations", "showRailwayStations");
+  setToggle("toggleMaritime", "showMaritime");
+  setToggle("togglePorts", "showPorts");
+  setToggle("toggleSeaRoutes", "showSeaRoutes");
   setToggle("toggleNature", "showNature");
   setToggle("toggleMountains", "showMountains");
   setToggle("toggleRivers", "showRivers");

@@ -30,6 +30,11 @@
           <label><input id="toggleRailwayStations" type="checkbox" checked> 철도역</label>
         </span>
         <span class="toolbar-group">
+          <label><input id="toggleMaritime" type="checkbox" checked> 해상</label>
+          <label><input id="togglePorts" type="checkbox" checked> 항구</label>
+          <label><input id="toggleSeaRoutes" type="checkbox" checked> 뱃길</label>
+        </span>
+        <span class="toolbar-group">
           <label><input id="toggleNature" type="checkbox" checked> 자연</label>
           <label><input id="toggleMountains" type="checkbox" checked> 산</label>
           <label><input id="toggleRivers" type="checkbox" checked> 강</label>
@@ -62,6 +67,8 @@
           <div><span class="swatch rest-area"></span>휴게소</div>
           <div><span class="swatch railway"></span>철도</div>
           <div><span class="swatch station"></span>철도역</div>
+          <div><span class="swatch sea-route"></span>뱃길</div>
+          <div><span class="swatch port"></span>항구</div>
           <div><span class="swatch river"></span>강</div>
           <div><span class="swatch park"></span>국립공원</div>
           <div><span class="swatch mountain"></span>대표 산</div>
@@ -80,6 +87,7 @@
 
     <script src="./src/data/korea-map-data.js"></script>
     <script src="./src/data/real-overlays.js?v=official-rest-areas"></script>
-    <script src="./src/main.js?v=admin-toggle" defer></script>
+    <script src="./src/data/maritime-data.js?v=ports-routes"></script>
+    <script src="./src/main.js?v=maritime-overlay" defer></script>
   </body>
 </html>

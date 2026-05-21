@@ -212,6 +212,21 @@ body {
     var(--field);
 }
 
+.sea-route {
+  background: repeating-linear-gradient(
+    90deg,
+    #9be2ed 0 5px,
+    transparent 5px 8px
+  );
+}
+
+.port {
+  background:
+    linear-gradient(#f4f1de 0 0) 50% 35% / 10px 5px no-repeat,
+    linear-gradient(#d86048 0 0) 50% 72% / 14px 3px no-repeat,
+    #2b7fa0;
+}
+
 .river {
   background: var(--river);
 }

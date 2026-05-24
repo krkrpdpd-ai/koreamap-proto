@@ -64,6 +64,8 @@
   const staticTileBuildBudgetPerFrame = 2;
   const playerMoveRedrawIdleMs = 180;
   const cameraMoveRedrawIdleMs = 140;
+  const roadVehicleCount = 18;
+  const trainVehicleCount = 7;
   const mapWidth = Math.ceil(((bounds.east - bounds.west) * kmPerDegLon / tileKm) * tilePx) + margin * 2;
   const mapHeight = Math.ceil(((bounds.north - bounds.south) * kmPerDegLat / tileKm) * tilePx) + margin * 2;
 
@@ -429,6 +431,9 @@
     "인천국제공항선"
   ]);
 
+  const simulatedRoadVehicles = buildRoadTrafficSimulations();
+  const simulatedTrains = buildTrainTrafficSimulations();
+
   function buildMajorMountains() {
     const peakByName = new Map(
       (real?.peaks || [])
@@ -449,6 +454,165 @@
         labelWeight: 1
       };
     });
+  }
+
+  function buildRoadTrafficSimulations() {
+    const tracks = buildRoadTrafficTracks();
+    return buildMovingEntities(tracks, roadVehicleCount, "car");
+  }
+
+  function buildTrainTrafficSimulations() {
+    const tracks = buildTrainTrafficTracks();
+    return buildMovingEntities(tracks, trainVehicleCount, "train");
+  }
+
+  function buildRoadTrafficTracks() {
+    if (!selectableRoadRoutes.length) return [];
+    const placeCandidates = simulationPlaceCandidates();
+    const tracks = [];
+
+    for (const route of selectableRoadRoutes) {
+      if (route.class !== "expressway" && route.class !== "national") continue;
+      for (const path of route.paths || []) {
+        if (!path?.length || path.length < 2) continue;
+        const metrics = buildPathMetrics(path);
+        if (metrics.length < 90) continue;
+        const start = path[0];
+        const end = path[path.length - 1];
+        tracks.push({
+          id: `${route.id}:${tracks.length}`,
+          type: "roadTrafficTrack",
+          class: route.class,
+          routeName: route.name,
+          origin: nearestSimulationName(start, placeCandidates, route.name),
+          destination: nearestSimulationName(end, placeCandidates, route.name),
+          metrics,
+          length: metrics.length
+        });
+      }
+    }
+
+    return tracks
+      .sort((a, b) => roadClassRank(a.class) - roadClassRank(b.class) || b.length - a.length)
+      .slice(0, 64);
+  }
+
+  function buildTrainTrafficTracks() {
+    if (!real?.railways?.length) return [];
+    const stationCandidates = (real?.railwayStations || []).map((station) => ({
+      name: station.name,
+      point: station.point
+    }));
+    const fallbackPlaces = simulationPlaceCandidates();
+    const tracks = [];
+
+    for (const rail of real.railways) {
+      if (!isMajorRailway(rail) || !rail.path?.length || rail.path.length < 2) continue;
+      const metrics = buildPathMetrics(rail.path);
+      if (metrics.length < 100) continue;
+      const start = rail.path[0];
+      const end = rail.path[rail.path.length - 1];
+      tracks.push({
+        id: `${rail.id || rail.name}:${tracks.length}`,
+        type: "trainTrafficTrack",
+        routeName: rail.name,
+        origin: nearestSimulationName(start, stationCandidates, nearestSimulationName(start, fallbackPlaces, rail.name)),
+        destination: nearestSimulationName(end, stationCandidates, nearestSimulationName(end, fallbackPlaces, rail.name)),
+        metrics,
+        length: metrics.length
+      });
+    }
+
+    return tracks.sort((a, b) => b.length - a.length).slice(0, 36);
+  }
+
+  function buildMovingEntities(tracks, count, kind) {
+    if (!tracks.length) return [];
+    const colors =
+      kind === "train"
+        ? ["#e8e3c7", "#8dc0d4", "#d9644f", "#b8d982"]
+        : ["#d8e1e6", "#e9c46a", "#f4a261", "#8ecae6", "#f1f0d1", "#d86048"];
+    const entities = [];
+    const limit = Math.min(count, tracks.length);
+
+    for (let i = 0; i < limit; i++) {
+      const trackIndex = Math.floor(pseudo(i + 11, kind === "train" ? 37 : 19) * tracks.length) % tracks.length;
+      const track = tracks[(trackIndex + i * 3) % tracks.length];
+      const forward = pseudo(i + 17, track.length) > 0.5;
+      const speedBase = kind === "train" ? 15.5 : track.class === "expressway" ? 13.5 : 9.5;
+      entities.push({
+        id: `${kind}:${i}`,
+        kind,
+        track,
+        origin: forward ? track.origin : track.destination,
+        destination: forward ? track.destination : track.origin,
+        direction: forward ? 1 : -1,
+        progress: pseudo(i + 23, track.length) * track.length,
+        speed: speedBase * (0.78 + pseudo(i + 29, track.length) * 0.48),
+        color: colors[i % colors.length]
+      });
+    }
+
+    return entities;
+  }
+
+  function simulationPlaceCandidates() {
+    const places = real?.places?.length ? real.places : data.places;
+    return places
+      .filter((place) => place.name && place.kind !== "province" && place.kind !== "island")
+      .map((place) => {
+        const p = placePoint(place);
+        return { name: place.name, point: [p.x, p.y] };
+      });
+  }
+
+  function nearestSimulationName(point, candidates, fallback) {
+    let best = null;
+    let bestDistance = Infinity;
+    for (const candidate of candidates || []) {
+      if (!candidate?.point?.length) continue;
+      const distance = Math.hypot(point[0] - candidate.point[0], point[1] - candidate.point[1]);
+      if (distance < bestDistance) {
+        best = candidate;
+        bestDistance = distance;
+      }
+    }
+    return best?.name || fallback || "";
+  }
+
+  function buildPathMetrics(path) {
+    const segments = [];
+    let length = 0;
+    for (let i = 1; i < path.length; i++) {
+      const start = path[i - 1];
+      const end = path[i];
+      const distance = Math.hypot(end[0] - start[0], end[1] - start[1]);
+      if (distance < 0.05) continue;
+      segments.push({ start, end, distance, offset: length });
+      length += distance;
+    }
+    return { path, segments, length };
+  }
+
+  function pointOnMetricPath(metrics, distance) {
+    if (!metrics?.segments?.length || metrics.length <= 0) return null;
+    let d = distance % metrics.length;
+    if (d < 0) d += metrics.length;
+
+    for (const segment of metrics.segments) {
+      if (d > segment.offset + segment.distance) continue;
+      const t = clamp((d - segment.offset) / segment.distance, 0, 1);
+      const dx = segment.end[0] - segment.start[0];
+      const dy = segment.end[1] - segment.start[1];
+      return {
+        x: segment.start[0] + dx * t,
+        y: segment.start[1] + dy * t,
+        angle: Math.atan2(dy, dx)
+      };
+    }
+
+    const last = metrics.segments[metrics.segments.length - 1];
+    return { x: last.end[0], y: last.end[1], angle: Math.atan2(last.end[1] - last.start[1], last.end[0] - last.start[0]) };
   }
 
   function resizeInitialScroll() {
@@ -2352,6 +2516,95 @@
     target.restore();
   }
 
+  function updateTrafficSimulations(delta) {
+    for (const vehicle of simulatedRoadVehicles) {
+      vehicle.progress = wrapPathProgress(vehicle.progress + vehicle.direction * vehicle.speed * delta, vehicle.track.length);
+    }
+    for (const train of simulatedTrains) {
+      train.progress = wrapPathProgress(train.progress + train.direction * train.speed * delta, train.track.length);
+    }
+  }
+
+  function wrapPathProgress(progress, length) {
+    if (!Number.isFinite(length) || length <= 0) return 0;
+    let next = progress % length;
+    if (next < 0) next += length;
+    return next;
+  }
+
+  function drawTrafficSimulations(target) {
+    if (state.showRoads && simulatedRoadVehicles.length) {
+      for (const vehicle of simulatedRoadVehicles) {
+        if (!isRoadClassEnabled({ class: vehicle.track.class })) continue;
+        drawRoadVehicle(target, vehicle);
+      }
+    }
+    if (state.showRailways && simulatedTrains.length) {
+      for (const train of simulatedTrains) {
+        drawTrainVehicle(target, train);
+      }
+    }
+  }
+
+  function drawRoadVehicle(target, vehicle) {
+    const sample = pointOnMetricPath(vehicle.track.metrics, vehicle.progress);
+    if (!sample || !pointIntersectsView(sample.x, sample.y, 90)) return;
+    drawPixelCar(target, sample.x, sample.y, sample.angle + (vehicle.direction < 0 ? Math.PI : 0), vehicle.color);
+  }
+
+  function drawTrainVehicle(target, train) {
+    const sample = pointOnMetricPath(train.track.metrics, train.progress);
+    if (!sample || !pointIntersectsView(sample.x, sample.y, 110)) return;
+    drawPixelTrain(target, sample.x, sample.y, sample.angle + (train.direction < 0 ? Math.PI : 0), train.color);
+  }
+
+  function drawPixelCar(target, x, y, angle, color) {
+    const s = 1 / state.zoom;
+    target.save();
+    target.translate(x, y);
+    target.rotate(angle);
+    target.fillStyle = "rgba(0, 0, 0, 0.28)";
+    target.fillRect(-6 * s, 2.8 * s, 12 * s, 2 * s);
+    target.fillStyle = "#252b30";
+    target.fillRect(-7 * s, -3.5 * s, 14 * s, 7 * s);
+    target.fillStyle = color;
+    target.fillRect(-5.5 * s, -2.5 * s, 11 * s, 5 * s);
+    target.fillStyle = "#9be2ed";
+    target.fillRect(-1.2 * s, -2 * s, 3.4 * s, 4 * s);
+    target.fillStyle = "#f4f1de";
+    target.fillRect(4.7 * s, -2.1 * s, 1.2 * s, 1.4 * s);
+    target.fillRect(4.7 * s, 0.7 * s, 1.2 * s, 1.4 * s);
+    target.fillStyle = "#151a1f";
+    target.fillRect(-4.8 * s, -3.6 * s, 2.2 * s, 1.2 * s);
+    target.fillRect(-4.8 * s, 2.4 * s, 2.2 * s, 1.2 * s);
+    target.fillRect(2.8 * s, -3.6 * s, 2.2 * s, 1.2 * s);
+    target.fillRect(2.8 * s, 2.4 * s, 2.2 * s, 1.2 * s);
+    target.restore();
+  }
+
+  function drawPixelTrain(target, x, y, angle, color) {
+    const s = 1 / state.zoom;
+    target.save();
+    target.translate(x, y);
+    target.rotate(angle);
+    target.fillStyle = "rgba(0, 0, 0, 0.28)";
+    target.fillRect(-15 * s, 3.8 * s, 30 * s, 2.4 * s);
+    target.fillStyle = "#252b30";
+    target.fillRect(-16 * s, -5 * s, 32 * s, 10 * s);
+    target.fillStyle = color;
+    target.fillRect(-14.5 * s, -3.8 * s, 29 * s, 7.6 * s);
+    target.fillStyle = "#d86048";
+    target.fillRect(9.8 * s, -3.8 * s, 4.7 * s, 7.6 * s);
+    target.fillStyle = "#9be2ed";
+    for (let i = -10; i <= 5; i += 5) {
+      target.fillRect(i * s, -2.5 * s, 2.5 * s, 2 * s);
+      target.fillRect(i * s, 0.5 * s, 2.5 * s, 2 * s);
+    }
+    target.fillStyle = "#f4f1de";
+    target.fillRect(14 * s, -2.2 * s, 1.4 * s, 4.4 * s);
+    target.restore();
+  }
+
   function render(now = performance.now()) {
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -2359,6 +2612,7 @@
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     renderStaticTiles(ctx);
     applyWorldTransform(ctx);
+    drawTrafficSimulations(ctx);
     drawDynamicFeatureHighlights(ctx);
     drawPlayer(ctx);
     ctx.setTransform(1, 0, 0, 1, 0, 0);
@@ -2368,6 +2622,7 @@
   function animate(now) {
     const delta = Math.min(0.04, (now - (animate.last || now)) / 1000);
     animate.last = now;
+    updateTrafficSimulations(delta);
     updatePlayer(delta, now);
     render(now);
     requestAnimationFrame(animate);

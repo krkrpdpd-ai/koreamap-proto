@@ -49,9 +49,12 @@
   const kmPerDegLat = 111.32;
   const kmPerDegLon = 111.32 * Math.cos((data.meta.midLat * Math.PI) / 180);
   const margin = 70;
-  const fixedIconScale = 1.55;
-  const labelScale = 1.18;
-  const playerScale = 0.1;
+  const fixedIconScale = 3;
+  const labelScale = 1.35;
+  const playerScale = 0.2;
+  const pointHitRadiusPx = 64;
+  const hoverHitRadiusPx = 58;
+  const staticScrollRedrawIntervalMs = 55;
   const mapWidth = Math.ceil(((bounds.east - bounds.west) * kmPerDegLon / tileKm) * tilePx) + margin * 2;
   const mapHeight = Math.ceil(((bounds.north - bounds.south) * kmPerDegLat / tileKm) * tilePx) + margin * 2;
 
@@ -65,6 +68,10 @@
   const staticCtx = staticCanvas.getContext("2d");
   staticCtx.imageSmoothingEnabled = false;
   let renderPixelRatio = 1;
+  let cachedStaticScrollLeft = 0;
+  let cachedStaticScrollTop = 0;
+  let lastStaticDrawTime = 0;
+  let staticDirtyReason = "content";
   const pathBoundsCache = new WeakMap();
 
   const keys = new Set();
@@ -87,7 +94,7 @@
   };
   const player = {
     ...toWorld([126.978, 37.566]),
-    speed: 13.2,
+    speed: 6.6,
     frame: 0,
     direction: "down"
   };
@@ -437,7 +444,7 @@
     frame.scrollTop = Math.min(frame.scrollTop, Math.max(0, scaledHeight - viewportHeight));
     const zoomLevel = document.getElementById("zoomLevel");
     if (zoomLevel) zoomLevel.textContent = `${Math.round(state.zoom * 100)}%`;
-    state.staticDirty = true;
+    markStaticDirty("content");
   }
 
   function applyWorldTransform(target) {
@@ -505,6 +512,15 @@
     };
   }
 
+  function markStaticDirty(reason = "content") {
+    state.staticDirty = true;
+    if (reason === "content") {
+      staticDirtyReason = "content";
+    } else if (staticDirtyReason !== "content") {
+      staticDirtyReason = reason;
+    }
+  }
+
   function setZoom(nextZoom, anchor = null) {
     const oldZoom = state.zoom;
     const clamped = clamp(nextZoom, 0.65, 20);
@@ -559,6 +575,10 @@
     drawCultureTourism(staticCtx);
     staticCtx.setTransform(1, 0, 0, 1, 0, 0);
     state.staticDirty = false;
+    staticDirtyReason = "none";
+    cachedStaticScrollLeft = frame.scrollLeft;
+    cachedStaticScrollTop = frame.scrollTop;
+    lastStaticDrawTime = performance.now();
   }
 
   function drawSea(target) {
@@ -1835,11 +1855,26 @@
     target.restore();
   }
 
-  function render() {
-    if (state.staticDirty) drawStatic();
+  function shouldDeferScrollRedraw(now) {
+    if (!state.staticDirty || staticDirtyReason !== "scroll") return false;
+    if (!lastStaticDrawTime) return false;
+    const dx = Math.abs(frame.scrollLeft - cachedStaticScrollLeft);
+    const dy = Math.abs(frame.scrollTop - cachedStaticScrollTop);
+    if (dx > frame.clientWidth * 0.4 || dy > frame.clientHeight * 0.4) return false;
+    return now - lastStaticDrawTime < staticScrollRedrawIntervalMs;
+  }
+
+  function drawStaticCache(target) {
+    const dx = Math.round((cachedStaticScrollLeft - frame.scrollLeft) * renderPixelRatio);
+    const dy = Math.round((cachedStaticScrollTop - frame.scrollTop) * renderPixelRatio);
+    target.drawImage(staticCanvas, dx, dy);
+  }
+
+  function render(now = performance.now()) {
+    if (state.staticDirty && !shouldDeferScrollRedraw(now)) drawStatic();
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    ctx.drawImage(staticCanvas, 0, 0);
+    drawStaticCache(ctx);
     applyWorldTransform(ctx);
     drawPlayer(ctx);
     ctx.setTransform(1, 0, 0, 1, 0, 0);
@@ -1849,7 +1884,7 @@
     const delta = Math.min(0.04, (now - (animate.last || now)) / 1000);
     animate.last = now;
     updatePlayer(delta);
-    render();
+    render(now);
     requestAnimationFrame(animate);
   }
 
@@ -1891,16 +1926,26 @@
   }
 
   function keepPlayerVisible() {
-    const pad = 90;
+    const pad = Math.min(180, Math.max(100, Math.floor(Math.min(frame.clientWidth, frame.clientHeight) * 0.24)));
     const x = player.x * state.zoom;
     const y = player.y * state.zoom;
-    if (x < frame.scrollLeft + pad) frame.scrollLeft = Math.max(0, x - pad);
-    if (y < frame.scrollTop + pad) frame.scrollTop = Math.max(0, y - pad);
+    let nextLeft = frame.scrollLeft;
+    let nextTop = frame.scrollTop;
+    if (x < frame.scrollLeft + pad) nextLeft = Math.max(0, x - pad);
+    if (y < frame.scrollTop + pad) nextTop = Math.max(0, y - pad);
     if (x > frame.scrollLeft + frame.clientWidth - pad) {
-      frame.scrollLeft = x - frame.clientWidth + pad;
+      nextLeft = x - frame.clientWidth + pad;
     }
     if (y > frame.scrollTop + frame.clientHeight - pad) {
-      frame.scrollTop = y - frame.clientHeight + pad;
+      nextTop = y - frame.clientHeight + pad;
+    }
+    if (Math.abs(nextLeft - frame.scrollLeft) > 0.25) {
+      frame.scrollLeft = nextLeft;
+      markStaticDirty("scroll");
+    }
+    if (Math.abs(nextTop - frame.scrollTop) > 0.25) {
+      frame.scrollTop = nextTop;
+      markStaticDirty("scroll");
     }
   }
 
@@ -2421,7 +2466,7 @@
   document.getElementById("zoomReset").addEventListener("click", () => setZoom(1));
 
   frame.addEventListener("scroll", () => {
-    state.staticDirty = true;
+    markStaticDirty("scroll");
   });
 
   if (window.ResizeObserver) {
@@ -2578,14 +2623,14 @@
       return;
     }
     const { x, y } = clientToWorld(event.clientX, event.clientY);
-    const place = findNearestPlace(x, y, 24 / state.zoom);
+    const place = findNearestPlace(x, y, pointHitRadiusPx / state.zoom);
     if (place) updateInspector(place, { x, y });
   });
 
   canvas.addEventListener("mousemove", (event) => {
     if (dragPan.active) return;
     const { x, y } = clientToWorld(event.clientX, event.clientY);
-    const place = findNearestPlace(x, y, 20 / state.zoom);
+    const place = findNearestPlace(x, y, hoverHitRadiusPx / state.zoom);
     if (place !== state.hoverPlace) {
       state.hoverPlace = place;
       canvas.style.cursor = place ? "pointer" : "grab";

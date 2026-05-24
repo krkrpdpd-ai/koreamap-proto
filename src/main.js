@@ -83,6 +83,7 @@
   let staticTileFrame = 0;
   let renderWorldBoundsOverride = null;
   let staticDirtyReason = "content";
+  let deferredLabels = null;
   const pathBoundsCache = new WeakMap();
   const staticTileCache = new Map();
 
@@ -656,32 +657,39 @@
   }
 
   function drawStaticContent(target) {
-    drawSea(target);
-    if (state.showGrid) drawGrid(target);
-    drawLand(target);
-    if (isNatureLayerVisible("showNationalParks")) {
-      drawTerrain(target);
+    const previousDeferredLabels = deferredLabels;
+    deferredLabels = [];
+    try {
+      drawSea(target);
+      if (state.showGrid) drawGrid(target);
+      drawLand(target);
+      if (isNatureLayerVisible("showNationalParks")) {
+        drawTerrain(target);
+      }
+      if (isNatureLayerVisible("showRivers")) {
+        drawRivers(target);
+      }
+      if (isNatureLayerVisible("showLakes")) {
+        drawPointFeatures(target, data.lakes, 1);
+      }
+      if (state.showMaritime && state.showSeaRoutes) drawSeaRoutes(target);
+      if (state.showRoads) drawRoads(target, { labels: false });
+      if (state.showRailways) drawRailways(target, { stations: false });
+      if (state.showAviation && state.showAirRoutes) drawAirRoutes(target);
+      if (state.showRoads) drawRoadLabels(target);
+      if (state.showRoads && state.showRestAreas) drawRestAreas(target);
+      if (state.showRailways && state.showRailwayStations && real?.railwayStations?.length) drawRailwayStations(target);
+      if (state.showMaritime && state.showPorts) drawPorts(target);
+      if (state.showAviation && state.showAirports) drawAirports(target);
+      if (isNatureLayerVisible("showMountains")) drawMajorMountains(target);
+      if (state.showBoundaries && !real?.provinces?.length) drawProvinceBoundaries(target);
+      drawPlaces(target);
+      drawIslands(target);
+      drawCultureTourism(target);
+      flushDeferredLabels(target);
+    } finally {
+      deferredLabels = previousDeferredLabels;
     }
-    if (isNatureLayerVisible("showRivers")) {
-      drawRivers(target);
-    }
-    if (isNatureLayerVisible("showLakes")) {
-      drawPointFeatures(target, data.lakes, 1);
-    }
-    if (state.showMaritime && state.showSeaRoutes) drawSeaRoutes(target);
-    if (state.showRoads) drawRoads(target, { labels: false });
-    if (state.showRailways) drawRailways(target, { stations: false });
-    if (state.showAviation && state.showAirRoutes) drawAirRoutes(target);
-    if (state.showRoads) drawRoadLabels(target);
-    if (state.showRoads && state.showRestAreas) drawRestAreas(target);
-    if (state.showRailways && state.showRailwayStations && real?.railwayStations?.length) drawRailwayStations(target);
-    if (state.showMaritime && state.showPorts) drawPorts(target);
-    if (state.showAviation && state.showAirports) drawAirports(target);
-    if (isNatureLayerVisible("showMountains")) drawMajorMountains(target);
-    if (state.showBoundaries && !real?.provinces?.length) drawProvinceBoundaries(target);
-    drawPlaces(target);
-    drawIslands(target);
-    drawCultureTourism(target);
   }
 
   function worldLoopRange(min, max, step, axis) {
@@ -1924,6 +1932,22 @@
   }
 
   function drawLabel(target, text, x, y, size) {
+    if (deferredLabels) {
+      deferredLabels.push({ text, x, y, size });
+      return;
+    }
+    renderLabel(target, text, x, y, size);
+  }
+
+  function flushDeferredLabels(target) {
+    const labels = deferredLabels || [];
+    deferredLabels = null;
+    for (const label of labels) {
+      renderLabel(target, label.text, label.x, label.y, label.size);
+    }
+  }
+
+  function renderLabel(target, text, x, y, size) {
     target.save();
     const zoomAdjustedSize = (size * labelScale) / state.zoom;
     target.font = `700 ${zoomAdjustedSize}px 'Malgun Gothic', sans-serif`;

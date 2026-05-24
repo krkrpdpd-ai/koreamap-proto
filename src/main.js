@@ -51,9 +51,10 @@
   const margin = 70;
   const fixedIconScale = 3;
   const labelScale = 1.35;
-  const playerScale = 0.2;
+  const playerScale = 0.04;
   const pointHitRadiusPx = 64;
   const hoverHitRadiusPx = 58;
+  const staticCachePaddingPx = 220;
   const staticScrollRedrawIntervalMs = 55;
   const mapWidth = Math.ceil(((bounds.east - bounds.west) * kmPerDegLon / tileKm) * tilePx) + margin * 2;
   const mapHeight = Math.ceil(((bounds.north - bounds.south) * kmPerDegLat / tileKm) * tilePx) + margin * 2;
@@ -94,7 +95,7 @@
   };
   const player = {
     ...toWorld([126.978, 37.566]),
-    speed: 6.6,
+    speed: 13.2,
     frame: 0,
     direction: "down"
   };
@@ -433,8 +434,8 @@
     const backingHeight = Math.max(1, Math.round(viewportHeight * renderPixelRatio));
     canvas.width = backingWidth;
     canvas.height = backingHeight;
-    staticCanvas.width = backingWidth;
-    staticCanvas.height = backingHeight;
+    staticCanvas.width = Math.max(1, Math.round((viewportWidth + staticCachePaddingPx * 2) * renderPixelRatio));
+    staticCanvas.height = Math.max(1, Math.round((viewportHeight + staticCachePaddingPx * 2) * renderPixelRatio));
     ctx.imageSmoothingEnabled = false;
     staticCtx.imageSmoothingEnabled = false;
     canvas.style.width = `${viewportWidth}px`;
@@ -447,19 +448,19 @@
     markStaticDirty("content");
   }
 
-  function applyWorldTransform(target) {
+  function applyWorldTransform(target, scrollLeft = frame.scrollLeft, scrollTop = frame.scrollTop) {
     target.setTransform(
       renderPixelRatio * state.zoom,
       0,
       0,
       renderPixelRatio * state.zoom,
-      -frame.scrollLeft * renderPixelRatio,
-      -frame.scrollTop * renderPixelRatio
+      -scrollLeft * renderPixelRatio,
+      -scrollTop * renderPixelRatio
     );
   }
 
   function visibleWorldBounds(paddingPx = 96) {
-    const padding = paddingPx / state.zoom;
+    const padding = Math.max(paddingPx, staticCachePaddingPx + 96) / state.zoom;
     return {
       left: frame.scrollLeft / state.zoom - padding,
       top: frame.scrollTop / state.zoom - padding,
@@ -550,7 +551,7 @@
   function drawStatic() {
     staticCtx.setTransform(1, 0, 0, 1, 0, 0);
     staticCtx.clearRect(0, 0, staticCanvas.width, staticCanvas.height);
-    applyWorldTransform(staticCtx);
+    applyWorldTransform(staticCtx, frame.scrollLeft - staticCachePaddingPx, frame.scrollTop - staticCachePaddingPx);
     drawSea(staticCtx);
     if (state.showGrid) drawGrid(staticCtx);
     drawLand(staticCtx);
@@ -1860,13 +1861,13 @@
     if (!lastStaticDrawTime) return false;
     const dx = Math.abs(frame.scrollLeft - cachedStaticScrollLeft);
     const dy = Math.abs(frame.scrollTop - cachedStaticScrollTop);
-    if (dx > frame.clientWidth * 0.4 || dy > frame.clientHeight * 0.4) return false;
+    if (dx > staticCachePaddingPx * 0.82 || dy > staticCachePaddingPx * 0.82) return false;
     return now - lastStaticDrawTime < staticScrollRedrawIntervalMs;
   }
 
   function drawStaticCache(target) {
-    const dx = Math.round((cachedStaticScrollLeft - frame.scrollLeft) * renderPixelRatio);
-    const dy = Math.round((cachedStaticScrollTop - frame.scrollTop) * renderPixelRatio);
+    const dx = Math.round((cachedStaticScrollLeft - frame.scrollLeft - staticCachePaddingPx) * renderPixelRatio);
+    const dy = Math.round((cachedStaticScrollTop - frame.scrollTop - staticCachePaddingPx) * renderPixelRatio);
     target.drawImage(staticCanvas, dx, dy);
   }
 

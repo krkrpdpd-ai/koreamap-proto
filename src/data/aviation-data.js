@@ -272,6 +272,90 @@ window.KOREA_AVIATION_DATA = {
       labelWeight: 3
     },
     {
+      id: "air-yangyang-jeju",
+      name: "양양-제주 하늘길",
+      from: "양양국제공항",
+      to: "제주국제공항",
+      category: "강원권 제주 노선",
+      points: [
+        [128.669, 38.061],
+        [127.2, 35.9],
+        [126.493, 33.511]
+      ],
+      description: "강원 동해안권과 제주를 연결하는 국내선 대표 경로입니다.",
+      labelWeight: 3
+    },
+    {
+      id: "air-ulsan-jeju",
+      name: "울산-제주 하늘길",
+      from: "울산공항",
+      to: "제주국제공항",
+      category: "동남권 제주 노선",
+      points: [
+        [129.352, 35.594],
+        [128.2, 34.6],
+        [126.493, 33.511]
+      ],
+      description: "울산 산업권과 제주를 연결하는 국내선입니다.",
+      labelWeight: 3
+    },
+    {
+      id: "air-pohang-jeju",
+      name: "포항경주-제주 하늘길",
+      from: "포항경주공항",
+      to: "제주국제공항",
+      category: "동해안 제주 노선",
+      points: [
+        [129.42, 35.988],
+        [128.3, 34.8],
+        [126.493, 33.511]
+      ],
+      description: "포항, 경주권과 제주를 연결하는 국내선입니다.",
+      labelWeight: 3
+    },
+    {
+      id: "air-sacheon-jeju",
+      name: "사천-제주 하늘길",
+      from: "사천공항",
+      to: "제주국제공항",
+      category: "서부경남 제주 노선",
+      points: [
+        [128.07, 35.089],
+        [127.3, 34.25],
+        [126.493, 33.511]
+      ],
+      description: "진주, 사천 등 서부 경남권과 제주를 연결하는 국내선입니다.",
+      labelWeight: 3
+    },
+    {
+      id: "air-wonju-jeju",
+      name: "원주-제주 하늘길",
+      from: "원주공항",
+      to: "제주국제공항",
+      category: "강원 내륙 제주 노선",
+      points: [
+        [127.96, 37.438],
+        [127.0, 35.6],
+        [126.493, 33.511]
+      ],
+      description: "강원 내륙권과 제주를 연결하는 국내선입니다.",
+      labelWeight: 4
+    },
+    {
+      id: "air-gimpo-gwangju",
+      name: "김포-광주 하늘길",
+      from: "김포국제공항",
+      to: "광주공항",
+      category: "수도권-호남권 연결",
+      points: [
+        [126.802, 37.558],
+        [126.78, 36.18],
+        [126.811, 35.126]
+      ],
+      description: "수도권과 광주권을 잇는 대표 내륙 국내선입니다.",
+      labelWeight: 2
+    },
+    {
       id: "air-gimpo-gimhae",
       name: "김포-김해 하늘길",
       from: "김포국제공항",
@@ -354,6 +438,34 @@ window.KOREA_AVIATION_DATA = {
       ],
       description: "수도권과 강원 동해안 관광권을 잇는 대표 항공 연결로 표시했습니다.",
       labelWeight: 4
+    },
+    {
+      id: "air-daegu-incheon-inner",
+      name: "대구-인천 내항기",
+      from: "대구국제공항",
+      to: "인천국제공항",
+      category: "국제선 환승 내항기",
+      points: [
+        [128.638, 35.894],
+        [127.4, 36.6],
+        [126.451, 37.46]
+      ],
+      description: "일반 국내선보다는 인천국제공항 국제선 환승을 위한 내항기 성격의 연결입니다.",
+      labelWeight: 3
+    },
+    {
+      id: "air-gimhae-incheon-inner",
+      name: "김해-인천 내항기",
+      from: "김해국제공항",
+      to: "인천국제공항",
+      category: "국제선 환승 내항기",
+      points: [
+        [128.938, 35.18],
+        [127.55, 36.45],
+        [126.451, 37.46]
+      ],
+      description: "부산권과 인천국제공항의 국제선 환승을 연결하는 내항기 성격의 노선입니다.",
+      labelWeight: 3
     }
   ]
 };

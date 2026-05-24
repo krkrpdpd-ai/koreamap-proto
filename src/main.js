@@ -64,6 +64,7 @@
 
   const keys = new Set();
   const sprites = new Map();
+  const activePointers = new Map();
   const dragPan = {
     active: false,
     pointerId: null,
@@ -73,6 +74,11 @@
     startScrollTop: 0,
     moved: false,
     suppressClick: false
+  };
+  const pinchZoom = {
+    active: false,
+    startDistance: 0,
+    startZoom: 1
   };
   const player = {
     ...toWorld([126.978, 37.566]),
@@ -2282,8 +2288,56 @@
     { passive: false }
   );
 
+  function pointerCenter(pointerA, pointerB) {
+    return {
+      clientX: (pointerA.clientX + pointerB.clientX) / 2,
+      clientY: (pointerA.clientY + pointerB.clientY) / 2
+    };
+  }
+
+  function pointerDistance(pointerA, pointerB) {
+    return Math.hypot(pointerA.clientX - pointerB.clientX, pointerA.clientY - pointerB.clientY);
+  }
+
+  function startPinchZoom() {
+    const pointers = [...activePointers.values()];
+    if (pointers.length < 2) return;
+    pinchZoom.active = true;
+    pinchZoom.startDistance = Math.max(1, pointerDistance(pointers[0], pointers[1]));
+    pinchZoom.startZoom = state.zoom;
+    dragPan.active = false;
+    dragPan.pointerId = null;
+    dragPan.moved = true;
+    dragPan.suppressClick = true;
+    frame.classList.remove("dragging");
+  }
+
+  function continueDragFromPointer(pointer) {
+    dragPan.active = true;
+    dragPan.pointerId = pointer.pointerId;
+    dragPan.startX = pointer.clientX;
+    dragPan.startY = pointer.clientY;
+    dragPan.startScrollLeft = frame.scrollLeft;
+    dragPan.startScrollTop = frame.scrollTop;
+    dragPan.moved = true;
+    frame.classList.add("dragging");
+  }
+
   canvas.addEventListener("pointerdown", (event) => {
-    if (event.button !== 0) return;
+    if (event.pointerType === "mouse" && event.button !== 0) return;
+    activePointers.set(event.pointerId, {
+      pointerId: event.pointerId,
+      clientX: event.clientX,
+      clientY: event.clientY
+    });
+    canvas.setPointerCapture(event.pointerId);
+
+    if (event.pointerType !== "mouse" && activePointers.size >= 2) {
+      startPinchZoom();
+      event.preventDefault();
+      return;
+    }
+
     dragPan.active = true;
     dragPan.pointerId = event.pointerId;
     dragPan.startX = event.clientX;
@@ -2292,11 +2346,28 @@
     dragPan.startScrollTop = frame.scrollTop;
     dragPan.moved = false;
     dragPan.suppressClick = false;
-    canvas.setPointerCapture(event.pointerId);
     frame.classList.add("dragging");
   });
 
   canvas.addEventListener("pointermove", (event) => {
+    if (activePointers.has(event.pointerId)) {
+      activePointers.set(event.pointerId, {
+        pointerId: event.pointerId,
+        clientX: event.clientX,
+        clientY: event.clientY
+      });
+    }
+
+    if (pinchZoom.active && activePointers.size >= 2) {
+      const pointers = [...activePointers.values()];
+      const distance = Math.max(1, pointerDistance(pointers[0], pointers[1]));
+      const center = pointerCenter(pointers[0], pointers[1]);
+      setZoom(pinchZoom.startZoom * (distance / pinchZoom.startDistance), center);
+      dragPan.suppressClick = true;
+      event.preventDefault();
+      return;
+    }
+
     if (!dragPan.active || dragPan.pointerId !== event.pointerId) return;
     const dx = event.clientX - dragPan.startX;
     const dy = event.clientY - dragPan.startY;
@@ -2307,12 +2378,27 @@
   });
 
   function endDragPan(event) {
+    if (canvas.hasPointerCapture(event.pointerId)) canvas.releasePointerCapture(event.pointerId);
+    activePointers.delete(event.pointerId);
+
+    if (pinchZoom.active) {
+      pinchZoom.active = false;
+      dragPan.suppressClick = true;
+      if (activePointers.size === 1) {
+        continueDragFromPointer([...activePointers.values()][0]);
+      } else {
+        dragPan.active = false;
+        dragPan.pointerId = null;
+        frame.classList.remove("dragging");
+      }
+      return;
+    }
+
     if (!dragPan.active || dragPan.pointerId !== event.pointerId) return;
     dragPan.active = false;
     dragPan.pointerId = null;
     dragPan.suppressClick = dragPan.moved;
     frame.classList.remove("dragging");
-    if (canvas.hasPointerCapture(event.pointerId)) canvas.releasePointerCapture(event.pointerId);
   }
 
   canvas.addEventListener("pointerup", endDragPan);

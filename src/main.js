@@ -51,10 +51,12 @@
   const margin = 70;
   const fixedIconScale = 3;
   const labelScale = 1.35;
-  const playerScale = 0.04;
+  const playerScale = 0.08;
   const pointHitRadiusPx = 64;
   const hoverHitRadiusPx = 58;
-  const staticCachePaddingPx = 900;
+  const desiredStaticCachePaddingPx = 1800;
+  const minStaticCachePaddingPx = 900;
+  const maxStaticCachePixels = 22000000;
   const staticScrollRedrawIntervalMs = 120;
   const playerMoveRedrawIdleMs = 180;
   const cameraMoveRedrawIdleMs = 140;
@@ -81,6 +83,7 @@
   let viewScrollTop = 0;
   let syncingFrameScroll = false;
   let frameScrollSyncPending = false;
+  let staticCachePaddingPx = desiredStaticCachePaddingPx;
   let staticDirtyReason = "content";
   const pathBoundsCache = new WeakMap();
 
@@ -432,6 +435,7 @@
     const viewportWidth = Math.max(1, Math.floor(frame.clientWidth || frame.getBoundingClientRect().width || mapWidth));
     const viewportHeight = Math.max(1, Math.floor(frame.clientHeight || frame.getBoundingClientRect().height || mapHeight));
     renderPixelRatio = Math.max(1, Math.min(window.devicePixelRatio || 1, 2));
+    staticCachePaddingPx = resolveStaticCachePadding(viewportWidth, viewportHeight, renderPixelRatio);
 
     if (mapContent) {
       mapContent.style.width = `${scaledWidth}px`;
@@ -453,6 +457,17 @@
     const zoomLevel = document.getElementById("zoomLevel");
     if (zoomLevel) zoomLevel.textContent = `${Math.round(state.zoom * 100)}%`;
     markStaticDirty("content");
+  }
+
+  function resolveStaticCachePadding(viewportWidth, viewportHeight, pixelRatio) {
+    let padding = desiredStaticCachePaddingPx;
+    while (
+      padding > minStaticCachePaddingPx &&
+      (viewportWidth + padding * 2) * (viewportHeight + padding * 2) * pixelRatio * pixelRatio > maxStaticCachePixels
+    ) {
+      padding -= 100;
+    }
+    return Math.max(minStaticCachePaddingPx, padding);
   }
 
   function applyWorldTransform(target, scrollLeft = viewScrollLeft, scrollTop = viewScrollTop) {
@@ -578,6 +593,16 @@
     if (!frameScrollSyncPending) return;
     if (now - lastCameraMoveTime < cameraMoveRedrawIdleMs) return;
     syncFrameScrollToView();
+  }
+
+  function isScrollMotionActive(now) {
+    return (
+      keys.size > 0 ||
+      dragPan.active ||
+      pinchZoom.active ||
+      now - lastPlayerMoveTime < playerMoveRedrawIdleMs ||
+      now - lastCameraMoveTime < cameraMoveRedrawIdleMs
+    );
   }
 
   function setZoom(nextZoom, anchor = null) {
@@ -1917,9 +1942,8 @@
     if (!lastStaticDrawTime) return false;
     const dx = Math.abs(viewScrollLeft - cachedStaticScrollLeft);
     const dy = Math.abs(viewScrollTop - cachedStaticScrollTop);
+    if (isScrollMotionActive(now)) return true;
     if (dx > staticCachePaddingPx * 0.88 || dy > staticCachePaddingPx * 0.88) return false;
-    if (now - lastPlayerMoveTime < playerMoveRedrawIdleMs) return true;
-    if (now - lastCameraMoveTime < cameraMoveRedrawIdleMs) return true;
     return now - lastStaticDrawTime < staticScrollRedrawIntervalMs;
   }
 
@@ -1940,6 +1964,8 @@
     if (state.staticDirty && !shouldDeferScrollRedraw(now)) drawStatic();
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = palette.sea;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
     drawStaticCache(ctx);
     applyWorldTransform(ctx);
     drawPlayer(ctx);

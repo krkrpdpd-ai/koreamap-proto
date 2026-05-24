@@ -37,7 +37,7 @@
     showBoundaries: false,
     showLabels: true,
     showGrid: true,
-    zoom: 15,
+    zoom: 20,
     staticDirty: true,
     hoverPlace: null,
     selectedPlace: (real?.places && real.places[0]) || data.places[0]
@@ -49,7 +49,8 @@
   const kmPerDegLat = 111.32;
   const kmPerDegLon = 111.32 * Math.cos((data.meta.midLat * Math.PI) / 180);
   const margin = 70;
-  const fixedIconScale = 1.28;
+  const fixedIconScale = 1.55;
+  const labelScale = 1.18;
   const playerScale = 0.1;
   const mapWidth = Math.ceil(((bounds.east - bounds.west) * kmPerDegLon / tileKm) * tilePx) + margin * 2;
   const mapHeight = Math.ceil(((bounds.north - bounds.south) * kmPerDegLat / tileKm) * tilePx) + margin * 2;
@@ -86,7 +87,7 @@
   };
   const player = {
     ...toWorld([126.978, 37.566]),
-    speed: 132,
+    speed: 13.2,
     frame: 0,
     direction: "down"
   };
@@ -506,7 +507,7 @@
 
   function setZoom(nextZoom, anchor = null) {
     const oldZoom = state.zoom;
-    const clamped = clamp(nextZoom, 0.65, 15);
+    const clamped = clamp(nextZoom, 0.65, 20);
     if (Math.abs(clamped - oldZoom) < 0.001) return;
 
     const target = anchor || {
@@ -1431,9 +1432,9 @@
 
   function drawLabel(target, text, x, y, size) {
     target.save();
-    const zoomAdjustedSize = size / state.zoom;
+    const zoomAdjustedSize = (size * labelScale) / state.zoom;
     target.font = `700 ${zoomAdjustedSize}px 'Malgun Gothic', sans-serif`;
-    target.lineWidth = 4 / state.zoom;
+    target.lineWidth = (4 * labelScale) / state.zoom;
     target.strokeStyle = palette.labelShadow;
     target.fillStyle = palette.label;
     target.strokeText(text, Math.round(x), Math.round(y));
@@ -1803,8 +1804,8 @@
   }
 
   function drawPlayer(target) {
-    const x = Math.round(player.x);
-    const y = Math.round(player.y);
+    const x = player.x;
+    const y = player.y;
     const step = Math.floor(player.frame / 12) % 2;
     const legA = step === 0 ? 0 : 1;
     target.save();

@@ -66,6 +66,8 @@
   const cameraMoveRedrawIdleMs = 140;
   const roadVehicleCount = 18;
   const trainVehicleCount = 7;
+  const shipVehicleCount = 8;
+  const planeVehicleCount = 9;
   const mapWidth = Math.ceil(((bounds.east - bounds.west) * kmPerDegLon / tileKm) * tilePx) + margin * 2;
   const mapHeight = Math.ceil(((bounds.north - bounds.south) * kmPerDegLat / tileKm) * tilePx) + margin * 2;
 
@@ -433,6 +435,8 @@
 
   const simulatedRoadVehicles = buildRoadTrafficSimulations();
   const simulatedTrains = buildTrainTrafficSimulations();
+  const simulatedShips = buildShipTrafficSimulations();
+  const simulatedPlanes = buildPlaneTrafficSimulations();
 
   function buildMajorMountains() {
     const peakByName = new Map(
@@ -464,6 +468,16 @@
   function buildTrainTrafficSimulations() {
     const tracks = buildTrainTrafficTracks();
     return buildMovingEntities(tracks, trainVehicleCount, "train");
+  }
+
+  function buildShipTrafficSimulations() {
+    const tracks = buildRouteTrafficTracks(maritimeRoutes, "shipTrafficTrack", 45);
+    return buildMovingEntities(tracks, shipVehicleCount, "ship");
+  }
+
+  function buildPlaneTrafficSimulations() {
+    const tracks = buildRouteTrafficTracks(airRoutes, "planeTrafficTrack", 55);
+    return buildMovingEntities(tracks, planeVehicleCount, "plane");
   }
 
   function buildRoadTrafficTracks() {
@@ -526,12 +540,29 @@
     return tracks.sort((a, b) => b.length - a.length).slice(0, 36);
   }
 
+  function buildRouteTrafficTracks(routes, type, minLength) {
+    return (routes || [])
+      .map((route, index) => {
+        const metrics = buildPathMetrics(route.path || []);
+        if (metrics.length < minLength) return null;
+        return {
+          id: `${type}:${route.id || route.name || index}`,
+          type,
+          routeName: route.name,
+          category: route.category,
+          origin: route.from || route.name || "",
+          destination: route.to || route.name || "",
+          metrics,
+          length: metrics.length
+        };
+      })
+      .filter(Boolean)
+      .sort((a, b) => b.length - a.length);
+  }
+
   function buildMovingEntities(tracks, count, kind) {
     if (!tracks.length) return [];
-    const colors =
-      kind === "train"
-        ? ["#e8e3c7", "#8dc0d4", "#d9644f", "#b8d982"]
-        : ["#d8e1e6", "#e9c46a", "#f4a261", "#8ecae6", "#f1f0d1", "#d86048"];
+    const colors = simulationColors(kind);
     const entities = [];
     const limit = Math.min(count, tracks.length);
 
@@ -539,7 +570,7 @@
       const trackIndex = Math.floor(pseudo(i + 11, kind === "train" ? 37 : 19) * tracks.length) % tracks.length;
       const track = tracks[(trackIndex + i * 3) % tracks.length];
       const forward = pseudo(i + 17, track.length) > 0.5;
-      const speedBase = kind === "train" ? 15.5 : track.class === "expressway" ? 13.5 : 9.5;
+      const speedBase = simulationSpeedBase(kind, track);
       entities.push({
         id: `${kind}:${i}`,
         kind,
@@ -554,6 +585,20 @@
     }
 
     return entities;
+  }
+
+  function simulationColors(kind) {
+    if (kind === "train") return ["#e8e3c7", "#8dc0d4", "#d9644f", "#b8d982"];
+    if (kind === "ship") return ["#f4f1de", "#8ecae6", "#e9c46a", "#b8d982"];
+    if (kind === "plane") return ["#f1f0d1", "#d7c6ff", "#9be2ed", "#f4f1de"];
+    return ["#d8e1e6", "#e9c46a", "#f4a261", "#8ecae6", "#f1f0d1", "#d86048"];
+  }
+
+  function simulationSpeedBase(kind, track) {
+    if (kind === "train") return 15.5;
+    if (kind === "ship") return 6.5;
+    if (kind === "plane") return 24;
+    return track.class === "expressway" ? 13.5 : 9.5;
   }
 
   function simulationPlaceCandidates() {
@@ -2523,6 +2568,12 @@
     for (const train of simulatedTrains) {
       train.progress = wrapPathProgress(train.progress + train.direction * train.speed * delta, train.track.length);
     }
+    for (const ship of simulatedShips) {
+      ship.progress = wrapPathProgress(ship.progress + ship.direction * ship.speed * delta, ship.track.length);
+    }
+    for (const plane of simulatedPlanes) {
+      plane.progress = wrapPathProgress(plane.progress + plane.direction * plane.speed * delta, plane.track.length);
+    }
   }
 
   function wrapPathProgress(progress, length) {
@@ -2544,6 +2595,16 @@
         drawTrainVehicle(target, train);
       }
     }
+    if (state.showMaritime && state.showSeaRoutes && simulatedShips.length) {
+      for (const ship of simulatedShips) {
+        drawShipVehicle(target, ship);
+      }
+    }
+    if (state.showAviation && state.showAirRoutes && simulatedPlanes.length) {
+      for (const plane of simulatedPlanes) {
+        drawPlaneVehicle(target, plane);
+      }
+    }
   }
 
   function drawRoadVehicle(target, vehicle) {
@@ -2556,6 +2617,18 @@
     const sample = pointOnMetricPath(train.track.metrics, train.progress);
     if (!sample || !pointIntersectsView(sample.x, sample.y, 110)) return;
     drawPixelTrain(target, sample.x, sample.y, sample.angle + (train.direction < 0 ? Math.PI : 0), train.color);
+  }
+
+  function drawShipVehicle(target, ship) {
+    const sample = pointOnMetricPath(ship.track.metrics, ship.progress);
+    if (!sample || !pointIntersectsView(sample.x, sample.y, 120)) return;
+    drawPixelShip(target, sample.x, sample.y, sample.angle + (ship.direction < 0 ? Math.PI : 0), ship.color);
+  }
+
+  function drawPlaneVehicle(target, plane) {
+    const sample = pointOnMetricPath(plane.track.metrics, plane.progress);
+    if (!sample || !pointIntersectsView(sample.x, sample.y, 140)) return;
+    drawPixelPlane(target, sample.x, sample.y, sample.angle + (plane.direction < 0 ? Math.PI : 0), plane.color);
   }
 
   function drawPixelCar(target, x, y, angle, color) {
@@ -2602,6 +2675,52 @@
     }
     target.fillStyle = "#f4f1de";
     target.fillRect(14 * s, -2.2 * s, 1.4 * s, 4.4 * s);
+    target.restore();
+  }
+
+  function drawPixelShip(target, x, y, angle, color) {
+    const s = 1 / state.zoom;
+    target.save();
+    target.translate(x, y);
+    target.rotate(angle);
+    target.fillStyle = "rgba(0, 0, 0, 0.24)";
+    target.fillRect(-11 * s, 4.5 * s, 22 * s, 2.5 * s);
+    target.fillStyle = "#26313a";
+    target.fillRect(-13 * s, -4 * s, 26 * s, 8 * s);
+    target.fillStyle = color;
+    target.fillRect(-10.5 * s, -3 * s, 19 * s, 6 * s);
+    target.fillStyle = "#f4f1de";
+    target.fillRect(2 * s, -6 * s, 8 * s, 4 * s);
+    target.fillStyle = "#9be2ed";
+    target.fillRect(4 * s, -5 * s, 2 * s, 2 * s);
+    target.fillRect(7 * s, -5 * s, 2 * s, 2 * s);
+    target.fillStyle = "#d86048";
+    target.fillRect(10 * s, -2.2 * s, 2.5 * s, 4.4 * s);
+    target.fillStyle = "rgba(155, 226, 237, 0.48)";
+    target.fillRect(-16 * s, 3.2 * s, 4 * s, 1.4 * s);
+    target.fillRect(-19 * s, 1.1 * s, 2.6 * s, 1.2 * s);
+    target.restore();
+  }
+
+  function drawPixelPlane(target, x, y, angle, color) {
+    const s = 1 / state.zoom;
+    target.save();
+    target.translate(x, y);
+    target.rotate(angle);
+    target.fillStyle = "rgba(0, 0, 0, 0.18)";
+    target.fillRect(-10 * s, 5.5 * s, 20 * s, 2 * s);
+    target.fillStyle = "#252b30";
+    target.fillRect(-13 * s, -2 * s, 26 * s, 4 * s);
+    target.fillStyle = color;
+    target.fillRect(-11.5 * s, -1.2 * s, 22 * s, 2.4 * s);
+    target.fillStyle = "#d7c6ff";
+    target.fillRect(-1.5 * s, -8 * s, 7.5 * s, 16 * s);
+    target.fillStyle = "#9be2ed";
+    target.fillRect(3.5 * s, -1 * s, 4 * s, 2 * s);
+    target.fillStyle = "#d86048";
+    target.fillRect(-11.5 * s, -4 * s, 4 * s, 8 * s);
+    target.fillStyle = "#f4f1de";
+    target.fillRect(10.5 * s, -1.4 * s, 2.4 * s, 2.8 * s);
     target.restore();
   }
 

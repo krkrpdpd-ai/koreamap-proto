@@ -1144,7 +1144,7 @@
       if (!isRoadVisible(road)) continue;
       if (!pathIntersectsView(road.path, 120)) continue;
       const color = road.class === "expressway" ? palette.expressway : palette.national;
-      drawWorldStroke(target, road.path, color, road.class === "expressway" ? 4.2 : 2.8, true);
+      drawRoadTilePath(target, road.path, road.class, color);
 
       if (state.showLabels && road.name && labelCount < 28 && road.length > 9000 && !labeled.has(road.name)) {
         if (road.class === "national" && state.zoom < 1.35) continue;
@@ -1207,13 +1207,107 @@
     const rails = real.railways.filter(isMajorRailway);
     for (const rail of rails) {
       if (!pathIntersectsView(rail.path, 120)) continue;
-      drawWorldStroke(target, rail.path, palette.rail, 2.6, true);
+      drawRailTilePath(target, rail.path);
       if (rail === state.selectedPlace || rail === state.hoverPlace) {
         drawWorldStroke(target, rail.path, rail === state.selectedPlace ? palette.selected : "#bdf3ff", 5, true);
       }
     }
 
     target.restore();
+  }
+
+  function drawRoadTilePath(target, path, roadClass, color) {
+    const isExpressway = roadClass === "expressway";
+    drawWorldStroke(target, path, color, isExpressway ? 4.4 : 3.2, true);
+    drawPathTileStamps(target, path, isExpressway ? 11 : 9, (x, y, angle, index) => {
+      drawRoadTileStamp(target, x, y, angle, roadClass, index);
+    });
+  }
+
+  function drawRoadTileStamp(target, x, y, angle, roadClass, index) {
+    const isExpressway = roadClass === "expressway";
+    const s = 1 / state.zoom;
+    const length = isExpressway ? 10 : 8;
+    const width = isExpressway ? 5.6 : 3.8;
+    const surface = isExpressway
+      ? index % 2
+        ? "#e9bf58"
+        : palette.expressway
+      : index % 2
+        ? "#dd7555"
+        : palette.national;
+
+    target.save();
+    target.translate(x, y);
+    target.rotate(angle);
+    target.fillStyle = surface;
+    target.fillRect((-length / 2) * s, (-width / 2) * s, length * s, width * s);
+    if (index % 2 === 0) {
+      target.fillStyle = isExpressway ? "#fff0b8" : "#f4d58d";
+      target.fillRect(-1.4 * s, -0.55 * s, 2.8 * s, 1.1 * s);
+    }
+    if (isExpressway && index % 3 === 0) {
+      target.fillStyle = "rgba(124, 77, 37, 0.22)";
+      target.fillRect((-length / 2) * s, -2.4 * s, length * s, 0.8 * s);
+      target.fillRect((-length / 2) * s, 1.6 * s, length * s, 0.8 * s);
+    }
+    target.restore();
+  }
+
+  function drawRailTilePath(target, path) {
+    drawWorldStroke(target, path, "rgba(37, 43, 48, 0.5)", 4.4, true);
+    drawPathTileStamps(target, path, 10, (x, y, angle) => {
+      drawRailTileStamp(target, x, y, angle);
+    });
+  }
+
+  function drawRailTileStamp(target, x, y, angle) {
+    const s = 1 / state.zoom;
+    target.save();
+    target.translate(x, y);
+    target.rotate(angle);
+    target.fillStyle = "#7d654a";
+    target.fillRect(-1.1 * s, -5.3 * s, 2.2 * s, 10.6 * s);
+    target.fillStyle = palette.rail;
+    target.fillRect(-4.8 * s, -3.2 * s, 9.6 * s, 1.2 * s);
+    target.fillRect(-4.8 * s, 2 * s, 9.6 * s, 1.2 * s);
+    target.restore();
+  }
+
+  function drawPathTileStamps(target, path, spacingPx, drawStamp) {
+    if (!path?.length || path.length < 2) return;
+    const view = visibleWorldBounds(180);
+    const spacing = Math.max(0.4, spacingPx / state.zoom);
+    let phase = 0;
+    let index = 0;
+
+    for (let i = 1; i < path.length; i++) {
+      const start = path[i - 1];
+      const end = path[i];
+      const dx = end[0] - start[0];
+      const dy = end[1] - start[1];
+      const distance = Math.hypot(dx, dy);
+      if (distance < 0.1) continue;
+
+      const visible = segmentIntersectsBounds(start, end, view, 20 / state.zoom);
+      const angle = Math.atan2(dy, dx);
+      for (let d = phase ? spacing - phase : 0; d <= distance; d += spacing) {
+        if (visible) {
+          const t = d / distance;
+          drawStamp(start[0] + dx * t, start[1] + dy * t, angle, index);
+        }
+        index += 1;
+      }
+      phase = (phase + distance) % spacing;
+    }
+  }
+
+  function segmentIntersectsBounds(start, end, bounds, padding = 0) {
+    const left = Math.min(start[0], end[0]) - padding;
+    const right = Math.max(start[0], end[0]) + padding;
+    const top = Math.min(start[1], end[1]) - padding;
+    const bottom = Math.max(start[1], end[1]) + padding;
+    return left <= bounds.right && right >= bounds.left && top <= bounds.bottom && bottom >= bounds.top;
   }
 
   function drawSeaRoutes(target) {

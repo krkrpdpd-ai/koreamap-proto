@@ -15,6 +15,8 @@
   --field: #c8b05a;
   --heritage: #d8b36a;
   --tourism: #69c7b8;
+  --air-route: #d7c6ff;
+  --airport: #f1f0d1;
 }
 
 * {
@@ -227,6 +229,21 @@ body {
     linear-gradient(#f4f1de 0 0) 50% 35% / 10px 5px no-repeat,
     linear-gradient(#d86048 0 0) 50% 72% / 14px 3px no-repeat,
     #2b7fa0;
+}
+
+.air-route {
+  background: repeating-linear-gradient(
+    90deg,
+    var(--air-route) 0 4px,
+    transparent 4px 8px
+  );
+}
+
+.airport {
+  background:
+    linear-gradient(var(--airport) 0 0) 50% 52% / 15px 3px no-repeat,
+    linear-gradient(var(--airport) 0 0) 50% 50% / 3px 14px no-repeat,
+    #5f537a;
 }
 
 .heritage {

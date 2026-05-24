@@ -2,6 +2,7 @@
   const data = window.KOREA_MAP_DATA;
   const real = window.KOREA_REAL_OVERLAYS || null;
   const maritime = window.KOREA_MARITIME_DATA || { ports: [], seaRoutes: [] };
+  const aviation = window.KOREA_AVIATION_DATA || { airports: [], airRoutes: [] };
   const cultureTourism = window.KOREA_CULTURE_TOURISM_DATA || { heritageSites: [], touristSpots: [] };
   const canvas = document.getElementById("mapCanvas");
   const ctx = canvas.getContext("2d");
@@ -21,6 +22,9 @@
     showMaritime: true,
     showPorts: true,
     showSeaRoutes: true,
+    showAviation: true,
+    showAirports: true,
+    showAirRoutes: true,
     showCultureTourism: true,
     showHeritageSites: true,
     showTouristSpots: true,
@@ -136,6 +140,10 @@
     seaRouteDark: "#2b7fa0",
     port: "#f4f1de",
     portDark: "#d86048",
+    airRoute: "#d7c6ff",
+    airRouteDark: "#5f537a",
+    airport: "#f1f0d1",
+    airportDark: "#7f6fb2",
     heritage: "#d8b36a",
     heritageDark: "#7c4d25",
     tourism: "#69c7b8",
@@ -278,6 +286,28 @@
       ...route,
       type: "seaRoute",
       kind: "seaRoute",
+      path,
+      lengthKm: geoPathLengthKm(route.points)
+    };
+  });
+
+  const airports = (aviation.airports || []).map((airport) => {
+    const p = toWorld([airport.lon, airport.lat]);
+    return {
+      ...airport,
+      type: "airport",
+      kind: "airport",
+      icon: "airport",
+      point: [p.x, p.y]
+    };
+  });
+
+  const airRoutes = (aviation.airRoutes || []).map((route) => {
+    const path = routeDisplayPath(route.points);
+    return {
+      ...route,
+      type: "airRoute",
+      kind: "airRoute",
       path,
       lengthKm: geoPathLengthKm(route.points)
     };
@@ -642,7 +672,9 @@
     if (state.showRoads) drawRoads(target);
     if (state.showRoads && state.showRestAreas) drawRestAreas(target);
     if (state.showRailways) drawRailways(target);
+    if (state.showAviation && state.showAirRoutes) drawAirRoutes(target);
     if (state.showMaritime && state.showPorts) drawPorts(target);
+    if (state.showAviation && state.showAirports) drawAirports(target);
     if (isNatureLayerVisible("showMountains")) drawMajorMountains(target);
     if (state.showBoundaries && !real?.provinces?.length) drawProvinceBoundaries(target);
     drawPlaces(target);
@@ -1235,6 +1267,58 @@
     target.restore();
   }
 
+  function drawAirRoutes(target) {
+    if (!airRoutes.length) return;
+
+    target.save();
+    target.lineJoin = "round";
+    target.lineCap = "round";
+    for (const route of airRoutes) {
+      if (!isAirRouteVisible(route)) continue;
+      if (!pathIntersectsView(route.path, 140)) continue;
+      drawDashedWorldStroke(target, route.path, "rgba(95, 83, 122, 0.78)", 5.8, true, 12, 9);
+      drawDashedWorldStroke(target, route.path, palette.airRoute, 2.4, true, 7, 9);
+      if (route === state.selectedPlace || route === state.hoverPlace) {
+        drawWorldStroke(target, route.path, route === state.selectedPlace ? palette.selected : "#bdf3ff", 5.6, true);
+      }
+      if (state.showLabels && shouldShowAirRouteLabel(route)) {
+        const p = route.path[Math.floor(route.path.length / 2)];
+        drawLabelNear(target, route.name, p[0], p[1], route.labelWeight <= 1 ? 10 : 9, 7, -4);
+      }
+    }
+    target.restore();
+  }
+
+  function drawAirports(target) {
+    if (!airports.length) return;
+
+    target.save();
+    let labels = 0;
+    for (const airport of airports) {
+      if (!isAirportVisible(airport)) continue;
+      const p = { x: airport.point[0], y: airport.point[1] };
+      if (!pointIntersectsView(p.x, p.y, 160)) continue;
+      if (airport === state.selectedPlace || airport === state.hoverPlace) {
+        const markerSize = 30 / state.zoom;
+        target.fillStyle = airport === state.selectedPlace ? palette.selected : "#bdf3ff";
+        target.fillRect(Math.round(p.x - markerSize / 2), Math.round(p.y - markerSize / 2), markerSize, markerSize);
+      }
+
+      drawIcon(target, "airport", p.x, p.y, airport.labelWeight <= 2 ? 0.82 : 0.66, true);
+
+      const showAirportLabel =
+        airport.labelWeight <= 2 ||
+        (state.zoom >= 1.35 && airport.labelWeight <= 3) ||
+        (state.zoom >= 2.2 && airport.labelWeight <= 4);
+      if (state.showLabels && showAirportLabel && labels < 28) {
+        const label = airport.code ? `${airport.name} ${airport.code}` : airport.name;
+        drawLabelNear(target, label, p.x, p.y, airport.labelWeight <= 1 ? 10 : 9, 6, -2);
+        labels += 1;
+      }
+    }
+    target.restore();
+  }
+
   function drawRailwayStations(target) {
     const stations = [...real.railwayStations]
       .filter(isRailwayStationVisible)
@@ -1329,6 +1413,26 @@
     return state.zoom >= 1.85;
   }
 
+  function isAirportVisible(airport) {
+    if (!state.showAviation || !state.showAirports) return false;
+    if ((airport.labelWeight || 9) <= 2) return true;
+    if ((airport.labelWeight || 9) <= 3) return state.zoom >= 1.25;
+    return state.zoom >= 1.8;
+  }
+
+  function isAirRouteVisible(route) {
+    if (!state.showAviation || !state.showAirRoutes) return false;
+    if ((route.labelWeight || 9) <= 2) return true;
+    if ((route.labelWeight || 9) <= 3) return state.zoom >= 1.25;
+    return state.zoom >= 1.65;
+  }
+
+  function shouldShowAirRouteLabel(route) {
+    if ((route.labelWeight || 9) <= 1) return true;
+    if ((route.labelWeight || 9) <= 2) return state.zoom >= 1.2;
+    return state.zoom >= 1.85;
+  }
+
   function isCultureTourismVisible(feature) {
     if (!state.showCultureTourism) return false;
     if (feature.type === "heritageSite" && !state.showHeritageSites) return false;
@@ -1378,6 +1482,10 @@
     }
     if (feature.type === "seaRoute" && feature.path?.length) {
       drawWorldStroke(target, feature.path, color, 6, true);
+      return;
+    }
+    if (feature.type === "airRoute" && feature.path?.length) {
+      drawWorldStroke(target, feature.path, color, 5.6, true);
       return;
     }
     const point = placePoint(feature);
@@ -2297,6 +2405,23 @@
       return;
     }
 
+    if (place.type === "airport") {
+      inspectorTitle.textContent = place.code ? `${place.name} (${place.code})` : place.name;
+      const region = place.region ? `${place.region}. ` : "";
+      inspectorBody.textContent = `공항. ${region}${place.role || "항공 교통 거점"}입니다. ${place.description || "지도 위 주요 항공 이동 지점으로 표시됩니다."}`;
+      markFeatureOverlayDirty();
+      return;
+    }
+
+    if (place.type === "airRoute") {
+      inspectorTitle.textContent = place.name;
+      const endpoint = [place.from, place.to].filter(Boolean).join(" → ");
+      const distance = Number.isFinite(place.lengthKm) ? ` 약 ${formatKm(place.lengthKm)}.` : "";
+      inspectorBody.textContent = `하늘길. ${place.category || "대표 항공 연결"}${endpoint ? ` (${endpoint})` : ""}.${distance} ${place.description || "실제 항적이나 항공 관제 절차가 아닌 게임 지도용 대표 경로입니다."}`;
+      markFeatureOverlayDirty();
+      return;
+    }
+
     if (place.type === "river") {
       inspectorTitle.textContent = place.name;
       const width = place.widthMeters ? ` 추정 폭은 약 ${place.widthMeters.toLocaleString("ko-KR")}m입니다.` : "";
@@ -2415,6 +2540,30 @@
     return total;
   }
 
+  function routeDisplayPath(points) {
+    if (!points || points.length < 2) return [];
+    if (points.length !== 3) {
+      return points.map((point) => {
+        const p = toWorld(point);
+        return [p.x, p.y];
+      });
+    }
+
+    const start = toWorld(points[0]);
+    const control = toWorld(points[1]);
+    const end = toWorld(points[2]);
+    const path = [];
+    for (let i = 0; i <= 28; i++) {
+      const t = i / 28;
+      const inv = 1 - t;
+      path.push([
+        inv * inv * start.x + 2 * inv * t * control.x + t * t * end.x,
+        inv * inv * start.y + 2 * inv * t * control.y + t * t * end.y
+      ]);
+    }
+    return path;
+  }
+
   function haversineKm(a, b) {
     const radiusKm = 6371;
     const lat1 = (a[1] * Math.PI) / 180;
@@ -2501,6 +2650,25 @@
       for (const route of maritimeRoutes) {
         if (!isSeaRouteVisible(route)) continue;
         const tolerance = 10 / state.zoom;
+        const d = distanceToPath([x, y], route.path, tolerance);
+        if (d <= tolerance) consider(route, d, linePriority);
+      }
+    }
+
+    if (state.showAviation && state.showAirports && airports.length) {
+      for (const airport of airports) {
+        if (!isAirportVisible(airport)) continue;
+        const p = placePoint(airport);
+        const airportRadius = Math.max(radius, 18 / state.zoom);
+        const d = Math.hypot(p.x - x, p.y - y);
+        if (d < airportRadius) consider(airport, d, -1 / state.zoom);
+      }
+    }
+
+    if (state.showAviation && state.showAirRoutes && airRoutes.length) {
+      for (const route of airRoutes) {
+        if (!isAirRouteVisible(route)) continue;
+        const tolerance = 9 / state.zoom;
         const d = distanceToPath([x, y], route.path, tolerance);
         if (d <= tolerance) consider(route, d, linePriority);
       }
@@ -2649,6 +2817,7 @@
       toggleRoads: ["toggleExpressways", "toggleNationalRoads", "toggleRestAreas"],
       toggleRailways: ["toggleRailwayStations"],
       toggleMaritime: ["togglePorts", "toggleSeaRoutes"],
+      toggleAviation: ["toggleAirports", "toggleAirRoutes"],
       toggleCultureTourism: ["toggleHeritageSites", "toggleTouristSpots"],
       toggleNature: ["toggleMountains", "toggleRivers", "toggleLakes", "toggleNationalParks"],
       toggleAdmin: ["toggleProvinces", "toggleCities", "toggleCounties", "toggleIslands"]
@@ -2675,6 +2844,9 @@
   setToggle("toggleMaritime", "showMaritime");
   setToggle("togglePorts", "showPorts");
   setToggle("toggleSeaRoutes", "showSeaRoutes");
+  setToggle("toggleAviation", "showAviation");
+  setToggle("toggleAirports", "showAirports");
+  setToggle("toggleAirRoutes", "showAirRoutes");
   setToggle("toggleCultureTourism", "showCultureTourism");
   setToggle("toggleHeritageSites", "showHeritageSites");
   setToggle("toggleTouristSpots", "showTouristSpots");

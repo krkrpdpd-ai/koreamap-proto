@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <title>한국 도트맵 게임 프로토타입</title>
-    <link rel="stylesheet" href="./styles.css?v=viewport-renderer">
+    <link rel="stylesheet" href="./styles.css?v=aviation-overlays">
   </head>
   <body>
     <header class="topbar">
@@ -33,6 +33,11 @@
           <label><input id="toggleMaritime" type="checkbox" checked> 해상</label>
           <label><input id="togglePorts" type="checkbox" checked> 항구</label>
           <label><input id="toggleSeaRoutes" type="checkbox" checked> 뱃길</label>
+        </span>
+        <span class="toolbar-group">
+          <label><input id="toggleAviation" type="checkbox" checked> 항공</label>
+          <label><input id="toggleAirports" type="checkbox" checked> 공항</label>
+          <label><input id="toggleAirRoutes" type="checkbox" checked> 하늘길</label>
         </span>
         <span class="toolbar-group">
           <label><input id="toggleCultureTourism" type="checkbox" checked> 문화/관광</label>
@@ -74,6 +79,8 @@
           <div><span class="swatch station"></span>철도역</div>
           <div><span class="swatch sea-route"></span>뱃길</div>
           <div><span class="swatch port"></span>항구</div>
+          <div><span class="swatch air-route"></span>하늘길</div>
+          <div><span class="swatch airport"></span>공항</div>
           <div><span class="swatch heritage"></span>문화유적</div>
           <div><span class="swatch tourism"></span>관광지</div>
           <div><span class="swatch river"></span>강</div>
@@ -97,7 +104,8 @@
     <script src="./src/data/korea-map-data.js"></script>
     <script src="./src/data/real-overlays.js?v=official-rest-areas"></script>
     <script src="./src/data/maritime-data.js?v=ports-routes-clearance"></script>
+    <script src="./src/data/aviation-data.js?v=domestic-air-routes"></script>
     <script src="./src/data/culture-tourism-data.js?v=heritage-tourism"></script>
-    <script src="./src/main.js?v=tile-overlay-renderer" defer></script>
+    <script src="./src/main.js?v=aviation-overlays" defer></script>
   </body>
 </html>

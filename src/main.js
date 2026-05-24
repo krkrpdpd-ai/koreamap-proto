@@ -54,8 +54,10 @@
   const playerScale = 0.04;
   const pointHitRadiusPx = 64;
   const hoverHitRadiusPx = 58;
-  const staticCachePaddingPx = 900;
-  const staticScrollRedrawIntervalMs = 120;
+  const staticTileSizePx = 512;
+  const staticTileOverscanPx = 256;
+  const staticTileCacheLimit = 160;
+  const staticTileBuildBudgetPerFrame = 2;
   const playerMoveRedrawIdleMs = 180;
   const cameraMoveRedrawIdleMs = 140;
   const mapWidth = Math.ceil(((bounds.east - bounds.west) * kmPerDegLon / tileKm) * tilePx) + margin * 2;
@@ -65,15 +67,7 @@
   canvas.height = mapHeight;
   ctx.imageSmoothingEnabled = false;
 
-  const staticCanvas = document.createElement("canvas");
-  staticCanvas.width = mapWidth;
-  staticCanvas.height = mapHeight;
-  const staticCtx = staticCanvas.getContext("2d");
-  staticCtx.imageSmoothingEnabled = false;
   let renderPixelRatio = 1;
-  let cachedStaticScrollLeft = 0;
-  let cachedStaticScrollTop = 0;
-  let lastStaticDrawTime = 0;
   let lastPlayerMoveTime = 0;
   let lastCameraMoveTime = 0;
   let lastPositionText = "";
@@ -81,8 +75,12 @@
   let viewScrollTop = 0;
   let syncingFrameScroll = false;
   let frameScrollSyncPending = false;
+  let staticLayerVersion = 0;
+  let staticTileFrame = 0;
+  let renderWorldBoundsOverride = null;
   let staticDirtyReason = "content";
   const pathBoundsCache = new WeakMap();
+  const staticTileCache = new Map();
 
   const keys = new Set();
   const sprites = new Map();
@@ -442,10 +440,7 @@
     const backingHeight = Math.max(1, Math.round(viewportHeight * renderPixelRatio));
     canvas.width = backingWidth;
     canvas.height = backingHeight;
-    staticCanvas.width = Math.max(1, Math.round((viewportWidth + staticCachePaddingPx * 2) * renderPixelRatio));
-    staticCanvas.height = Math.max(1, Math.round((viewportHeight + staticCachePaddingPx * 2) * renderPixelRatio));
     ctx.imageSmoothingEnabled = false;
-    staticCtx.imageSmoothingEnabled = false;
     canvas.style.width = `${viewportWidth}px`;
     canvas.style.height = `${viewportHeight}px`;
 
@@ -467,7 +462,17 @@
   }
 
   function visibleWorldBounds(paddingPx = 96) {
-    const padding = Math.max(paddingPx, staticCachePaddingPx + 96) / state.zoom;
+    if (renderWorldBoundsOverride) {
+      const padding = paddingPx / state.zoom;
+      return {
+        left: renderWorldBoundsOverride.left - padding,
+        top: renderWorldBoundsOverride.top - padding,
+        right: renderWorldBoundsOverride.right + padding,
+        bottom: renderWorldBoundsOverride.bottom + padding
+      };
+    }
+
+    const padding = Math.max(paddingPx, staticTileOverscanPx + 96) / state.zoom;
     return {
       left: viewScrollLeft / state.zoom - padding,
       top: viewScrollTop / state.zoom - padding,
@@ -512,6 +517,11 @@
     return (paths || []).some((path) => pathIntersectsView(path, paddingPx));
   }
 
+  function pointIntersectsView(x, y, paddingPx = 96) {
+    const bounds = visibleWorldBounds(paddingPx);
+    return x >= bounds.left && x <= bounds.right && y >= bounds.top && y <= bounds.bottom;
+  }
+
   function clientToWorld(clientX, clientY) {
     const rect = canvas.getBoundingClientRect();
     return {
@@ -522,11 +532,18 @@
 
   function markStaticDirty(reason = "content") {
     state.staticDirty = true;
-    if (reason === "content") {
+    if (reason !== "scroll") {
+      invalidateStaticTiles();
       staticDirtyReason = "content";
     } else if (staticDirtyReason !== "content") {
-      staticDirtyReason = reason;
+      staticDirtyReason = "scroll";
     }
+  }
+
+  function invalidateStaticTiles() {
+    staticLayerVersion += 1;
+    staticTileCache.clear();
+    state.staticDirty = true;
   }
 
   function maxScrollLeft() {
@@ -604,46 +621,157 @@
     setViewScroll(x * state.zoom - frame.clientWidth / 2, y * state.zoom - frame.clientHeight / 2);
   }
 
-  function drawStatic() {
-    staticCtx.setTransform(1, 0, 0, 1, 0, 0);
-    staticCtx.clearRect(0, 0, staticCanvas.width, staticCanvas.height);
-    applyWorldTransform(staticCtx, viewScrollLeft - staticCachePaddingPx, viewScrollTop - staticCachePaddingPx);
-    drawSea(staticCtx);
-    if (state.showGrid) drawGrid(staticCtx);
-    drawLand(staticCtx);
+  function drawStaticContent(target) {
+    drawSea(target);
+    if (state.showGrid) drawGrid(target);
+    drawLand(target);
     if (isNatureLayerVisible("showNationalParks")) {
-      drawTerrain(staticCtx);
+      drawTerrain(target);
     }
     if (isNatureLayerVisible("showRivers")) {
-      drawRivers(staticCtx);
+      drawRivers(target);
     }
     if (isNatureLayerVisible("showLakes")) {
-      drawPointFeatures(staticCtx, data.lakes, 1);
+      drawPointFeatures(target, data.lakes, 1);
     }
-    if (state.showMaritime && state.showSeaRoutes) drawSeaRoutes(staticCtx);
-    if (state.showRoads) drawRoads(staticCtx);
-    if (state.showRoads && state.showRestAreas) drawRestAreas(staticCtx);
-    if (state.showRailways) drawRailways(staticCtx);
-    if (state.showMaritime && state.showPorts) drawPorts(staticCtx);
-    if (isNatureLayerVisible("showMountains")) drawMajorMountains(staticCtx);
-    if (state.showBoundaries && !real?.provinces?.length) drawProvinceBoundaries(staticCtx);
-    drawPlaces(staticCtx);
-    drawIslands(staticCtx);
-    drawCultureTourism(staticCtx);
-    staticCtx.setTransform(1, 0, 0, 1, 0, 0);
-    state.staticDirty = false;
-    staticDirtyReason = "none";
-    cachedStaticScrollLeft = viewScrollLeft;
-    cachedStaticScrollTop = viewScrollTop;
-    lastStaticDrawTime = performance.now();
+    if (state.showMaritime && state.showSeaRoutes) drawSeaRoutes(target);
+    if (state.showRoads) drawRoads(target);
+    if (state.showRoads && state.showRestAreas) drawRestAreas(target);
+    if (state.showRailways) drawRailways(target);
+    if (state.showMaritime && state.showPorts) drawPorts(target);
+    if (isNatureLayerVisible("showMountains")) drawMajorMountains(target);
+    if (state.showBoundaries && !real?.provinces?.length) drawProvinceBoundaries(target);
+    drawPlaces(target);
+    drawIslands(target);
+    drawCultureTourism(target);
+  }
+
+  function worldLoopRange(min, max, step, axis) {
+    const bounds = renderWorldBoundsOverride;
+    if (!bounds) return { start: min, end: max };
+
+    const low = axis === "x" ? bounds.left : bounds.top;
+    const high = axis === "x" ? bounds.right : bounds.bottom;
+    const startIndex = Math.max(0, Math.floor((low - min) / step) - 1);
+    const endIndex = Math.ceil((high - min) / step) + 1;
+    return {
+      start: min + startIndex * step,
+      end: Math.min(max, min + endIndex * step)
+    };
+  }
+
+  function visibleStaticTileSpecs() {
+    const scaledWidth = mapWidth * state.zoom;
+    const scaledHeight = mapHeight * state.zoom;
+    const left = clamp(viewScrollLeft - staticTileOverscanPx, 0, scaledWidth);
+    const top = clamp(viewScrollTop - staticTileOverscanPx, 0, scaledHeight);
+    const right = clamp(viewScrollLeft + frame.clientWidth + staticTileOverscanPx, 0, scaledWidth);
+    const bottom = clamp(viewScrollTop + frame.clientHeight + staticTileOverscanPx, 0, scaledHeight);
+    const startX = Math.floor(left / staticTileSizePx);
+    const endX = Math.floor(Math.max(left, right - 1) / staticTileSizePx);
+    const startY = Math.floor(top / staticTileSizePx);
+    const endY = Math.floor(Math.max(top, bottom - 1) / staticTileSizePx);
+    const centerX = viewScrollLeft + frame.clientWidth / 2;
+    const centerY = viewScrollTop + frame.clientHeight / 2;
+    const specs = [];
+
+    for (let tileY = startY; tileY <= endY; tileY++) {
+      for (let tileX = startX; tileX <= endX; tileX++) {
+        const screenLeft = tileX * staticTileSizePx;
+        const screenTop = tileY * staticTileSizePx;
+        specs.push({
+          tileX,
+          tileY,
+          screenLeft,
+          screenTop,
+          distance: Math.hypot(screenLeft + staticTileSizePx / 2 - centerX, screenTop + staticTileSizePx / 2 - centerY),
+          key: `${staticLayerVersion}:${tileX}:${tileY}`
+        });
+      }
+    }
+
+    specs.sort((a, b) => a.distance - b.distance);
+    return specs;
+  }
+
+  function renderStaticTiles(target) {
+    staticTileFrame += 1;
+    const specs = visibleStaticTileSpecs();
+    let built = 0;
+    let missing = false;
+
+    for (const spec of specs) {
+      let tile = staticTileCache.get(spec.key);
+      if (!tile && built < staticTileBuildBudgetPerFrame) {
+        tile = createStaticTile(spec);
+        staticTileCache.set(spec.key, tile);
+        built += 1;
+      }
+
+      if (tile) {
+        tile.lastUsed = staticTileFrame;
+        const dx = Math.round((spec.screenLeft - viewScrollLeft) * renderPixelRatio);
+        const dy = Math.round((spec.screenTop - viewScrollTop) * renderPixelRatio);
+        target.drawImage(tile.canvas, dx, dy);
+      } else {
+        missing = true;
+      }
+    }
+
+    pruneStaticTileCache();
+    state.staticDirty = missing;
+    if (!missing) staticDirtyReason = "none";
+  }
+
+  function createStaticTile(spec) {
+    const tileCanvas = document.createElement("canvas");
+    tileCanvas.width = Math.max(1, Math.round(staticTileSizePx * renderPixelRatio));
+    tileCanvas.height = Math.max(1, Math.round(staticTileSizePx * renderPixelRatio));
+    const tileCtx = tileCanvas.getContext("2d");
+    tileCtx.imageSmoothingEnabled = false;
+
+    const tileBounds = {
+      left: spec.screenLeft / state.zoom,
+      top: spec.screenTop / state.zoom,
+      right: (spec.screenLeft + staticTileSizePx) / state.zoom,
+      bottom: (spec.screenTop + staticTileSizePx) / state.zoom
+    };
+    const previousBounds = renderWorldBoundsOverride;
+    renderWorldBoundsOverride = tileBounds;
+
+    tileCtx.save();
+    try {
+      tileCtx.setTransform(1, 0, 0, 1, 0, 0);
+      tileCtx.clearRect(0, 0, tileCanvas.width, tileCanvas.height);
+      tileCtx.rect(0, 0, tileCanvas.width, tileCanvas.height);
+      tileCtx.clip();
+      applyWorldTransform(tileCtx, spec.screenLeft, spec.screenTop);
+      drawStaticContent(tileCtx);
+    } finally {
+      tileCtx.restore();
+      renderWorldBoundsOverride = previousBounds;
+    }
+
+    return { canvas: tileCanvas, lastUsed: staticTileFrame };
+  }
+
+  function pruneStaticTileCache() {
+    if (staticTileCache.size <= staticTileCacheLimit) return;
+    const entries = [...staticTileCache.entries()].sort((a, b) => a[1].lastUsed - b[1].lastUsed);
+    const removeCount = staticTileCache.size - staticTileCacheLimit;
+    for (let i = 0; i < removeCount; i++) {
+      staticTileCache.delete(entries[i][0]);
+    }
   }
 
   function drawSea(target) {
     target.fillStyle = palette.sea;
     target.fillRect(0, 0, mapWidth, mapHeight);
 
-    for (let y = 0; y < mapHeight; y += tilePx) {
-      for (let x = 0; x < mapWidth; x += tilePx) {
+    const xRange = worldLoopRange(0, mapWidth, tilePx, "x");
+    const yRange = worldLoopRange(0, mapHeight, tilePx, "y");
+    for (let y = yRange.start; y < yRange.end; y += tilePx) {
+      for (let x = xRange.start; x < xRange.end; x += tilePx) {
         const bit = pseudo(x / tilePx, y / tilePx);
         if (bit > 0.72) {
           target.fillStyle = bit > 0.88 ? palette.seaDeep : "rgba(112, 190, 204, 0.16)";
@@ -669,13 +797,15 @@
   function drawGrid(target) {
     target.strokeStyle = palette.grid;
     target.lineWidth = 1;
-    for (let x = margin; x < mapWidth - margin; x += tilePx) {
+    const xRange = worldLoopRange(margin, mapWidth - margin, tilePx, "x");
+    const yRange = worldLoopRange(margin, mapHeight - margin, tilePx, "y");
+    for (let x = xRange.start; x < xRange.end; x += tilePx) {
       target.beginPath();
       target.moveTo(Math.round(x) + 0.5, margin);
       target.lineTo(Math.round(x) + 0.5, mapHeight - margin);
       target.stroke();
     }
-    for (let y = margin; y < mapHeight - margin; y += tilePx) {
+    for (let y = yRange.start; y < yRange.end; y += tilePx) {
       target.beginPath();
       target.moveTo(margin, Math.round(y) + 0.5);
       target.lineTo(mapWidth - margin, Math.round(y) + 0.5);
@@ -692,8 +822,10 @@
       drawPolygon(target, land.points, palette.land, palette.coast, 3);
     }
 
-    for (let y = margin; y < mapHeight - margin; y += tilePx) {
-      for (let x = margin; x < mapWidth - margin; x += tilePx) {
+    const xRange = worldLoopRange(margin, mapWidth - margin, tilePx, "x");
+    const yRange = worldLoopRange(margin, mapHeight - margin, tilePx, "y");
+    for (let y = yRange.start; y < yRange.end; y += tilePx) {
+      for (let x = xRange.start; x < xRange.end; x += tilePx) {
         const lonLat = fromWorld(x + tilePx / 2, y + tilePx / 2);
         if (!isLand(lonLat.lon, lonLat.lat)) continue;
         const bit = pseudo(Math.floor(x / tilePx), Math.floor(y / tilePx));
@@ -720,8 +852,10 @@
       }
     });
 
-    for (let y = margin; y < mapHeight - margin; y += tilePx) {
-      for (let x = margin; x < mapWidth - margin; x += tilePx) {
+    const xRange = worldLoopRange(margin, mapWidth - margin, tilePx, "x");
+    const yRange = worldLoopRange(margin, mapHeight - margin, tilePx, "y");
+    for (let y = yRange.start; y < yRange.end; y += tilePx) {
+      for (let x = xRange.start; x < xRange.end; x += tilePx) {
         const centerX = x + tilePx / 2;
         const centerY = y + tilePx / 2;
         if (!isRealLand(centerX, centerY)) continue;
@@ -814,6 +948,7 @@
     target.save();
 
     for (const park of real.nationalParks) {
+      if (!pointIntersectsView(park.point[0], park.point[1], 160)) continue;
       if (park === state.selectedPlace || park === state.hoverPlace) {
         const markerSize = 36 / state.zoom;
         target.fillStyle = park === state.selectedPlace ? palette.selected : "#bdf3ff";
@@ -1068,6 +1203,7 @@
     for (const port of maritimePorts) {
       if (!isPortVisible(port)) continue;
       const p = { x: port.point[0], y: port.point[1] };
+      if (!pointIntersectsView(p.x, p.y, 160)) continue;
       if (port === state.selectedPlace || port === state.hoverPlace) {
         const markerSize = 30 / state.zoom;
         target.fillStyle = port === state.selectedPlace ? palette.selected : "#bdf3ff";
@@ -1097,6 +1233,7 @@
     target.save();
     for (const station of stations) {
       const p = { x: station.point[0], y: station.point[1] };
+      if (!pointIntersectsView(p.x, p.y, 150)) continue;
       if (station === state.selectedPlace || station === state.hoverPlace) {
         const markerSize = 26 / state.zoom;
         target.fillStyle = station === state.selectedPlace ? palette.selected : "#bdf3ff";
@@ -1126,6 +1263,7 @@
     target.save();
     for (const area of areas) {
       const p = { x: area.point[0], y: area.point[1] };
+      if (!pointIntersectsView(p.x, p.y, 150)) continue;
       if (area === state.selectedPlace || area === state.hoverPlace) {
         const markerSize = 30 / state.zoom;
         target.fillStyle = area === state.selectedPlace ? palette.selected : "#bdf3ff";
@@ -1247,6 +1385,7 @@
   function drawPointFeatures(target, list, scale) {
     for (const feature of list) {
       const p = toWorld([feature.lon, feature.lat]);
+      if (!pointIntersectsView(p.x, p.y, 150)) continue;
       if (feature === state.selectedPlace || feature === state.hoverPlace) {
         const markerSize = 34 / state.zoom;
         target.fillStyle = feature === state.selectedPlace ? palette.selected : "#bdf3ff";
@@ -1263,6 +1402,7 @@
     for (const place of sorted) {
       if (!isPlaceKindVisible(place)) continue;
       const p = placePoint(place);
+      if (!pointIntersectsView(p.x, p.y, 180)) continue;
       const scale = place.labelWeight <= 1 ? 1.25 : place.labelWeight <= 3 ? 1 : 0.84;
       if (place === state.selectedPlace || place === state.hoverPlace) {
         const markerSize = 38 / state.zoom;
@@ -1283,6 +1423,7 @@
     const islands = [...selectableIslands].sort((a, b) => (b.labelWeight || 9) - (a.labelWeight || 9));
     for (const island of islands) {
       const p = { x: island.point[0], y: island.point[1] };
+      if (!pointIntersectsView(p.x, p.y, 180)) continue;
       if (island === state.selectedPlace || island === state.hoverPlace) {
         const markerSize = 36 / state.zoom;
         target.fillStyle = island === state.selectedPlace ? palette.selected : "#bdf3ff";
@@ -1302,6 +1443,7 @@
     const sorted = [...majorMountains].sort((a, b) => (b.elevation || 0) - (a.elevation || 0));
     for (const mountain of sorted) {
       const p = placePoint(mountain);
+      if (!pointIntersectsView(p.x, p.y, 170)) continue;
       if (mountain === state.selectedPlace || mountain === state.hoverPlace) {
         const markerSize = 36 / state.zoom;
         target.fillStyle = mountain === state.selectedPlace ? palette.selected : "#bdf3ff";
@@ -1327,6 +1469,7 @@
     target.save();
     for (const feature of features) {
       const p = placePoint(feature);
+      if (!pointIntersectsView(p.x, p.y, 150)) continue;
       if (feature === state.selectedPlace || feature === state.hoverPlace) {
         const markerSize = 34 / state.zoom;
         target.fillStyle = feature === state.selectedPlace ? palette.selected : "#bdf3ff";
@@ -1912,35 +2055,12 @@
     target.restore();
   }
 
-  function shouldDeferScrollRedraw(now) {
-    if (!state.staticDirty || staticDirtyReason !== "scroll") return false;
-    if (!lastStaticDrawTime) return false;
-    const dx = Math.abs(viewScrollLeft - cachedStaticScrollLeft);
-    const dy = Math.abs(viewScrollTop - cachedStaticScrollTop);
-    if (dx > staticCachePaddingPx * 0.88 || dy > staticCachePaddingPx * 0.88) return false;
-    if (now - lastPlayerMoveTime < playerMoveRedrawIdleMs) return true;
-    if (now - lastCameraMoveTime < cameraMoveRedrawIdleMs) return true;
-    return now - lastStaticDrawTime < staticScrollRedrawIntervalMs;
-  }
-
-  function drawStaticCache(target) {
-    const dx = Math.round((cachedStaticScrollLeft - viewScrollLeft - staticCachePaddingPx) * renderPixelRatio);
-    const dy = Math.round((cachedStaticScrollTop - viewScrollTop - staticCachePaddingPx) * renderPixelRatio);
-    const sourceX = Math.max(0, -dx);
-    const sourceY = Math.max(0, -dy);
-    const destX = Math.max(0, dx);
-    const destY = Math.max(0, dy);
-    const width = Math.min(staticCanvas.width - sourceX, canvas.width - destX);
-    const height = Math.min(staticCanvas.height - sourceY, canvas.height - destY);
-    if (width <= 0 || height <= 0) return;
-    target.drawImage(staticCanvas, sourceX, sourceY, width, height, destX, destY, width, height);
-  }
-
   function render(now = performance.now()) {
-    if (state.staticDirty && !shouldDeferScrollRedraw(now)) drawStatic();
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    drawStaticCache(ctx);
+    ctx.fillStyle = palette.sea;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    renderStaticTiles(ctx);
     applyWorldTransform(ctx);
     drawPlayer(ctx);
     ctx.setTransform(1, 0, 0, 1, 0, 0);
@@ -2097,7 +2217,7 @@
       const roadType = place.class === "expressway" ? "고속도로" : "국도";
       const segmentText = place.segmentCount ? ` 원본 ${place.segmentCount.toLocaleString("ko-KR")}개 선 조각을 하나의 노선으로 묶어 선택했습니다.` : "";
       inspectorBody.textContent = `${roadType}. OSM 기반 도로 경로이며, 현재 지도에는 약 ${formatKm(place.lengthKm)} 구간으로 표시됩니다.${segmentText}`;
-      state.staticDirty = true;
+      markStaticDirty("content");
       return;
     }
 
@@ -2109,7 +2229,7 @@
       const parking = Number.isFinite(place.parkingSpaces) ? ` 주차 ${place.parkingSpaces.toLocaleString("ko-KR")}면.` : "";
       const amenities = formatRestAreaAmenities(place.amenities);
       inspectorBody.textContent = `${place.restType || "고속도로 휴게소"}. ${route || "고속도로"}의 공식 표준데이터 위치입니다.${food}${phone}${parking}${amenities}`;
-      state.staticDirty = true;
+      markStaticDirty("content");
       return;
     }
 
@@ -2117,7 +2237,7 @@
       inspectorTitle.textContent = place.name;
       const region = place.region ? `${place.region}. ` : "";
       inspectorBody.textContent = `항구. ${region}${place.role || "연안 여객 항구"}입니다. ${place.description || "지도 위 주요 해상 교통 거점으로 표시됩니다."}`;
-      state.staticDirty = true;
+      markStaticDirty("content");
       return;
     }
 
@@ -2126,7 +2246,7 @@
       const endpoint = [place.from, place.to].filter(Boolean).join(" → ");
       const distance = Number.isFinite(place.lengthKm) ? ` 약 ${formatKm(place.lengthKm)}.` : "";
       inspectorBody.textContent = `뱃길. ${place.category || "대표 여객 항로"}${endpoint ? ` (${endpoint})` : ""}.${distance} ${place.description || "실제 항법용 해도가 아닌 게임 지도용 대표 항로입니다."}`;
-      state.staticDirty = true;
+      markStaticDirty("content");
       return;
     }
 
@@ -2134,14 +2254,14 @@
       inspectorTitle.textContent = place.name;
       const width = place.widthMeters ? ` 추정 폭은 약 ${place.widthMeters.toLocaleString("ko-KR")}m입니다.` : "";
       inspectorBody.textContent = `주요 강. OSM 기반 수계 경로이며, 현재 지도에는 약 ${formatKm(place.lengthKm)} 구간으로 표시됩니다.${width}`;
-      state.staticDirty = true;
+      markStaticDirty("content");
       return;
     }
 
     if (place.type === "railway") {
       inspectorTitle.textContent = place.name;
       inspectorBody.textContent = `주요 철도 노선. OSM 기반 철도 경로이며, 현재 지도에는 약 ${formatKm(place.lengthKm)} 구간으로 표시됩니다.`;
-      state.staticDirty = true;
+      markStaticDirty("content");
       return;
     }
 
@@ -2150,7 +2270,7 @@
       const nameEn = place.nameEn ? ` / ${place.nameEn}` : "";
       const area = [place.province, place.city].filter(Boolean).join(" / ");
       inspectorBody.textContent = `철도역${nameEn}. HOT/HDX OSM 철도역 포인트 기반 위치입니다.${area ? ` 위치 분류: ${area}.` : ""}`;
-      state.staticDirty = true;
+      markStaticDirty("content");
       return;
     }
 
@@ -2159,7 +2279,7 @@
       const region = place.region ? `${place.region}. ` : "";
       const era = place.era ? `${place.era} 시대. ` : "";
       inspectorBody.textContent = `문화유적. ${region}${place.category || "문화유산"}. ${era}${place.description || "대표 문화유산 지점으로 표시됩니다."}`;
-      state.staticDirty = true;
+      markStaticDirty("content");
       return;
     }
 
@@ -2167,21 +2287,21 @@
       inspectorTitle.textContent = place.name;
       const region = place.region ? `${place.region}. ` : "";
       inspectorBody.textContent = `관광지. ${region}${place.category || "대표 관광지"}. ${place.description || "게임 지도에서 방문 지점으로 활용할 수 있는 관광 명소입니다."}`;
-      state.staticDirty = true;
+      markStaticDirty("content");
       return;
     }
 
     if (place.kind === "nationalPark") {
       inspectorTitle.textContent = place.name;
       inspectorBody.textContent = describeNationalPark(place);
-      state.staticDirty = true;
+      markStaticDirty("content");
       return;
     }
 
     if (place.icon === "lake") {
       inspectorTitle.textContent = place.name;
       inspectorBody.textContent = `호수. ${lakeDetails[place.id] || "주요 수변 지형으로 지도 위 자연 요소로 표시됩니다."}`;
-      state.staticDirty = true;
+      markStaticDirty("content");
       return;
     }
 
@@ -2189,21 +2309,21 @@
       inspectorTitle.textContent = place.name;
       const elevation = place.elevation ? `${Math.round(place.elevation).toLocaleString("ko-KR")}m` : "고도 정보 없음";
       inspectorBody.textContent = `${elevation}. ${place.description}`;
-      state.staticDirty = true;
+      markStaticDirty("content");
       return;
     }
 
     if (place.kind === "island") {
       inspectorTitle.textContent = place.name;
       inspectorBody.textContent = `섬. ${place.description || "OSM 또는 보정 좌표 기반으로 표시한 주요 섬입니다."}`;
-      state.staticDirty = true;
+      markStaticDirty("content");
       return;
     }
 
     inspectorTitle.textContent = place.name;
     const area = place.province ? `${place.province} / ` : "";
     inspectorBody.textContent = `${area}${kindLabel(place.kind)}. ${place.motif || "OSM"} 모티프 아이콘으로 표시됩니다.`;
-    state.staticDirty = true;
+    markStaticDirty("content");
   }
 
   function kindLabel(kind) {
@@ -2472,7 +2592,7 @@
     el.checked = state[key];
     el.addEventListener("change", () => {
       state[key] = el.checked;
-      state.staticDirty = true;
+      markStaticDirty("content");
       syncToggleGroups();
     });
   }
@@ -2705,7 +2825,7 @@
     if (place !== state.hoverPlace) {
       state.hoverPlace = place;
       canvas.style.cursor = place ? "pointer" : "grab";
-      state.staticDirty = true;
+      markStaticDirty("content");
     }
   });
 

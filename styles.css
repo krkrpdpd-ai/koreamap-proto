@@ -6,8 +6,8 @@
   --panel-2: #26313a;
   --line: #3f4d55;
   --sea: #284f6d;
-  --road-fast: #e6b84d;
-  --road-national: #d86b4a;
+  --road-fast: #59636a;
+  --road-national: #697075;
   --rail: #d8d0b0;
   --river: #63c5da;
   --mountain: #6f8f54;
@@ -189,11 +189,17 @@ body {
 }
 
 .expressway {
-  background: var(--road-fast);
+  background:
+    linear-gradient(#f0efe6 0 0) 50% 50% / 12px 2px no-repeat,
+    linear-gradient(#343b40 0 0) 0 0 / 100% 2px no-repeat,
+    linear-gradient(#343b40 0 0) 0 100% / 100% 2px no-repeat,
+    var(--road-fast);
 }
 
 .national {
-  background: var(--road-national);
+  background:
+    linear-gradient(#e5e1d4 0 0) 50% 50% / 10px 2px no-repeat,
+    var(--road-national);
 }
 
 .rest-area {

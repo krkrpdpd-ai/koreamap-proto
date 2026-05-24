@@ -127,10 +127,10 @@
     fieldDark: "#9f8843",
     river: "#63c5da",
     riverDark: "#2b7fa0",
-    expressway: "#e6b84d",
-    expresswayDark: "#7c4d25",
-    national: "#d86b4a",
-    nationalDark: "#683238",
+    expressway: "#59636a",
+    expresswayDark: "#343b40",
+    national: "#697075",
+    nationalDark: "#464c50",
     restArea: "#f6c85f",
     restAreaDark: "#7c4d25",
     rail: "#d8d0b0",
@@ -1256,10 +1256,10 @@
     const width = isExpressway ? 10.5 : 7.2;
     const surface = isExpressway
       ? index % 2
-        ? "#e9bf58"
+        ? "#667078"
         : palette.expressway
       : index % 2
-        ? "#dd7555"
+        ? "#757a7d"
         : palette.national;
 
     target.save();
@@ -1268,11 +1268,11 @@
     target.fillStyle = surface;
     target.fillRect((-length / 2) * s, (-width / 2) * s, length * s, width * s);
     if (index % 2 === 0) {
-      target.fillStyle = isExpressway ? "#fff0b8" : "#f4d58d";
+      target.fillStyle = isExpressway ? "#f0efe6" : "#e5e1d4";
       target.fillRect(-2.2 * s, -0.75 * s, 4.4 * s, 1.5 * s);
     }
     if (isExpressway && index % 3 === 0) {
-      target.fillStyle = "rgba(124, 77, 37, 0.22)";
+      target.fillStyle = "rgba(22, 26, 28, 0.24)";
       target.fillRect((-length / 2) * s, -4.7 * s, length * s, 1.1 * s);
       target.fillRect((-length / 2) * s, 3.6 * s, length * s, 1.1 * s);
     }

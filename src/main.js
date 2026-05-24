@@ -54,8 +54,10 @@
   const playerScale = 0.04;
   const pointHitRadiusPx = 64;
   const hoverHitRadiusPx = 58;
-  const staticCachePaddingPx = 220;
-  const staticScrollRedrawIntervalMs = 55;
+  const staticCachePaddingPx = 900;
+  const staticScrollRedrawIntervalMs = 120;
+  const playerMoveRedrawIdleMs = 180;
+  const cameraMoveRedrawIdleMs = 140;
   const mapWidth = Math.ceil(((bounds.east - bounds.west) * kmPerDegLon / tileKm) * tilePx) + margin * 2;
   const mapHeight = Math.ceil(((bounds.north - bounds.south) * kmPerDegLat / tileKm) * tilePx) + margin * 2;
 
@@ -72,6 +74,13 @@
   let cachedStaticScrollLeft = 0;
   let cachedStaticScrollTop = 0;
   let lastStaticDrawTime = 0;
+  let lastPlayerMoveTime = 0;
+  let lastCameraMoveTime = 0;
+  let lastPositionText = "";
+  let viewScrollLeft = 0;
+  let viewScrollTop = 0;
+  let syncingFrameScroll = false;
+  let frameScrollSyncPending = false;
   let staticDirtyReason = "content";
   const pathBoundsCache = new WeakMap();
 
@@ -414,8 +423,7 @@
   }
 
   function resizeInitialScroll() {
-    const p = toWorld([127.7, 36.1]);
-    scrollToWorld(p.x, p.y);
+    scrollToWorld(player.x, player.y);
   }
 
   function updateCanvasScale() {
@@ -441,14 +449,13 @@
     canvas.style.width = `${viewportWidth}px`;
     canvas.style.height = `${viewportHeight}px`;
 
-    frame.scrollLeft = Math.min(frame.scrollLeft, Math.max(0, scaledWidth - viewportWidth));
-    frame.scrollTop = Math.min(frame.scrollTop, Math.max(0, scaledHeight - viewportHeight));
+    setViewScroll(viewScrollLeft, viewScrollTop, { dirty: false });
     const zoomLevel = document.getElementById("zoomLevel");
     if (zoomLevel) zoomLevel.textContent = `${Math.round(state.zoom * 100)}%`;
     markStaticDirty("content");
   }
 
-  function applyWorldTransform(target, scrollLeft = frame.scrollLeft, scrollTop = frame.scrollTop) {
+  function applyWorldTransform(target, scrollLeft = viewScrollLeft, scrollTop = viewScrollTop) {
     target.setTransform(
       renderPixelRatio * state.zoom,
       0,
@@ -462,10 +469,10 @@
   function visibleWorldBounds(paddingPx = 96) {
     const padding = Math.max(paddingPx, staticCachePaddingPx + 96) / state.zoom;
     return {
-      left: frame.scrollLeft / state.zoom - padding,
-      top: frame.scrollTop / state.zoom - padding,
-      right: (frame.scrollLeft + frame.clientWidth) / state.zoom + padding,
-      bottom: (frame.scrollTop + frame.clientHeight) / state.zoom + padding
+      left: viewScrollLeft / state.zoom - padding,
+      top: viewScrollTop / state.zoom - padding,
+      right: (viewScrollLeft + frame.clientWidth) / state.zoom + padding,
+      bottom: (viewScrollTop + frame.clientHeight) / state.zoom + padding
     };
   }
 
@@ -508,8 +515,8 @@
   function clientToWorld(clientX, clientY) {
     const rect = canvas.getBoundingClientRect();
     return {
-      x: (frame.scrollLeft + clientX - rect.left) / state.zoom,
-      y: (frame.scrollTop + clientY - rect.top) / state.zoom
+      x: (viewScrollLeft + clientX - rect.left) / state.zoom,
+      y: (viewScrollTop + clientY - rect.top) / state.zoom
     };
   }
 
@@ -520,6 +527,57 @@
     } else if (staticDirtyReason !== "content") {
       staticDirtyReason = reason;
     }
+  }
+
+  function maxScrollLeft() {
+    return Math.max(0, Math.round(mapWidth * state.zoom) - frame.clientWidth);
+  }
+
+  function maxScrollTop() {
+    return Math.max(0, Math.round(mapHeight * state.zoom) - frame.clientHeight);
+  }
+
+  function syncFrameScrollToView() {
+    frameScrollSyncPending = false;
+    const left = Math.round(viewScrollLeft);
+    const top = Math.round(viewScrollTop);
+    if (Math.abs(frame.scrollLeft - left) < 0.5 && Math.abs(frame.scrollTop - top) < 0.5) return;
+    syncingFrameScroll = true;
+    frame.scrollLeft = left;
+    frame.scrollTop = top;
+    requestAnimationFrame(() => {
+      syncingFrameScroll = false;
+    });
+  }
+
+  function setViewScroll(left, top, options = {}) {
+    const syncFrame = options.syncFrame !== false;
+    const dirty = options.dirty !== false;
+    const now = options.now || performance.now();
+    const nextLeft = clamp(left, 0, maxScrollLeft());
+    const nextTop = clamp(top, 0, maxScrollTop());
+    const moved = Math.abs(nextLeft - viewScrollLeft) > 0.25 || Math.abs(nextTop - viewScrollTop) > 0.25;
+
+    viewScrollLeft = nextLeft;
+    viewScrollTop = nextTop;
+
+    if (moved && dirty) markStaticDirty("scroll");
+    if (!syncFrame) {
+      if (moved) {
+        lastCameraMoveTime = now;
+        frameScrollSyncPending = true;
+      }
+    } else {
+      syncFrameScrollToView();
+    }
+
+    return moved;
+  }
+
+  function maybeSyncFrameScroll(now) {
+    if (!frameScrollSyncPending) return;
+    if (now - lastCameraMoveTime < cameraMoveRedrawIdleMs) return;
+    syncFrameScrollToView();
   }
 
   function setZoom(nextZoom, anchor = null) {
@@ -534,24 +592,22 @@
     const frameRect = frame.getBoundingClientRect();
     const focusX = target.clientX - frameRect.left;
     const focusY = target.clientY - frameRect.top;
-    const worldX = (frame.scrollLeft + focusX) / oldZoom;
-    const worldY = (frame.scrollTop + focusY) / oldZoom;
+    const worldX = (viewScrollLeft + focusX) / oldZoom;
+    const worldY = (viewScrollTop + focusY) / oldZoom;
 
     state.zoom = clamped;
     updateCanvasScale();
-    frame.scrollLeft = Math.max(0, worldX * state.zoom - focusX);
-    frame.scrollTop = Math.max(0, worldY * state.zoom - focusY);
+    setViewScroll(worldX * state.zoom - focusX, worldY * state.zoom - focusY);
   }
 
   function scrollToWorld(x, y) {
-    frame.scrollLeft = Math.max(0, x * state.zoom - frame.clientWidth / 2);
-    frame.scrollTop = Math.max(0, y * state.zoom - frame.clientHeight / 2);
+    setViewScroll(x * state.zoom - frame.clientWidth / 2, y * state.zoom - frame.clientHeight / 2);
   }
 
   function drawStatic() {
     staticCtx.setTransform(1, 0, 0, 1, 0, 0);
     staticCtx.clearRect(0, 0, staticCanvas.width, staticCanvas.height);
-    applyWorldTransform(staticCtx, frame.scrollLeft - staticCachePaddingPx, frame.scrollTop - staticCachePaddingPx);
+    applyWorldTransform(staticCtx, viewScrollLeft - staticCachePaddingPx, viewScrollTop - staticCachePaddingPx);
     drawSea(staticCtx);
     if (state.showGrid) drawGrid(staticCtx);
     drawLand(staticCtx);
@@ -577,8 +633,8 @@
     staticCtx.setTransform(1, 0, 0, 1, 0, 0);
     state.staticDirty = false;
     staticDirtyReason = "none";
-    cachedStaticScrollLeft = frame.scrollLeft;
-    cachedStaticScrollTop = frame.scrollTop;
+    cachedStaticScrollLeft = viewScrollLeft;
+    cachedStaticScrollTop = viewScrollTop;
     lastStaticDrawTime = performance.now();
   }
 
@@ -1859,16 +1915,25 @@
   function shouldDeferScrollRedraw(now) {
     if (!state.staticDirty || staticDirtyReason !== "scroll") return false;
     if (!lastStaticDrawTime) return false;
-    const dx = Math.abs(frame.scrollLeft - cachedStaticScrollLeft);
-    const dy = Math.abs(frame.scrollTop - cachedStaticScrollTop);
-    if (dx > staticCachePaddingPx * 0.82 || dy > staticCachePaddingPx * 0.82) return false;
+    const dx = Math.abs(viewScrollLeft - cachedStaticScrollLeft);
+    const dy = Math.abs(viewScrollTop - cachedStaticScrollTop);
+    if (dx > staticCachePaddingPx * 0.88 || dy > staticCachePaddingPx * 0.88) return false;
+    if (now - lastPlayerMoveTime < playerMoveRedrawIdleMs) return true;
+    if (now - lastCameraMoveTime < cameraMoveRedrawIdleMs) return true;
     return now - lastStaticDrawTime < staticScrollRedrawIntervalMs;
   }
 
   function drawStaticCache(target) {
-    const dx = Math.round((cachedStaticScrollLeft - frame.scrollLeft - staticCachePaddingPx) * renderPixelRatio);
-    const dy = Math.round((cachedStaticScrollTop - frame.scrollTop - staticCachePaddingPx) * renderPixelRatio);
-    target.drawImage(staticCanvas, dx, dy);
+    const dx = Math.round((cachedStaticScrollLeft - viewScrollLeft - staticCachePaddingPx) * renderPixelRatio);
+    const dy = Math.round((cachedStaticScrollTop - viewScrollTop - staticCachePaddingPx) * renderPixelRatio);
+    const sourceX = Math.max(0, -dx);
+    const sourceY = Math.max(0, -dy);
+    const destX = Math.max(0, dx);
+    const destY = Math.max(0, dy);
+    const width = Math.min(staticCanvas.width - sourceX, canvas.width - destX);
+    const height = Math.min(staticCanvas.height - sourceY, canvas.height - destY);
+    if (width <= 0 || height <= 0) return;
+    target.drawImage(staticCanvas, sourceX, sourceY, width, height, destX, destY, width, height);
   }
 
   function render(now = performance.now()) {
@@ -1879,17 +1944,18 @@
     applyWorldTransform(ctx);
     drawPlayer(ctx);
     ctx.setTransform(1, 0, 0, 1, 0, 0);
+    maybeSyncFrameScroll(now);
   }
 
   function animate(now) {
     const delta = Math.min(0.04, (now - (animate.last || now)) / 1000);
     animate.last = now;
-    updatePlayer(delta);
+    updatePlayer(delta, now);
     render(now);
     requestAnimationFrame(animate);
   }
 
-  function updatePlayer(delta) {
+  function updatePlayer(delta, now = performance.now()) {
     let dx = 0;
     let dy = 0;
     if (keys.has("ArrowLeft") || keys.has("KeyA") || keys.has("Numpad4")) dx -= 1;
@@ -1921,6 +1987,7 @@
       player.y = clamp(player.y + dy * player.speed * delta, 20, mapHeight - 20);
       player.direction = Math.abs(dx) > Math.abs(dy) ? (dx < 0 ? "left" : "right") : dy < 0 ? "up" : "down";
       player.frame += 1;
+      lastPlayerMoveTime = now;
       keepPlayerVisible();
       updatePosition();
     }
@@ -1930,29 +1997,26 @@
     const pad = Math.min(180, Math.max(100, Math.floor(Math.min(frame.clientWidth, frame.clientHeight) * 0.24)));
     const x = player.x * state.zoom;
     const y = player.y * state.zoom;
-    let nextLeft = frame.scrollLeft;
-    let nextTop = frame.scrollTop;
-    if (x < frame.scrollLeft + pad) nextLeft = Math.max(0, x - pad);
-    if (y < frame.scrollTop + pad) nextTop = Math.max(0, y - pad);
-    if (x > frame.scrollLeft + frame.clientWidth - pad) {
+    let nextLeft = viewScrollLeft;
+    let nextTop = viewScrollTop;
+    if (x < viewScrollLeft + pad) nextLeft = Math.max(0, x - pad);
+    if (y < viewScrollTop + pad) nextTop = Math.max(0, y - pad);
+    if (x > viewScrollLeft + frame.clientWidth - pad) {
       nextLeft = x - frame.clientWidth + pad;
     }
-    if (y > frame.scrollTop + frame.clientHeight - pad) {
+    if (y > viewScrollTop + frame.clientHeight - pad) {
       nextTop = y - frame.clientHeight + pad;
     }
-    if (Math.abs(nextLeft - frame.scrollLeft) > 0.25) {
-      frame.scrollLeft = nextLeft;
-      markStaticDirty("scroll");
-    }
-    if (Math.abs(nextTop - frame.scrollTop) > 0.25) {
-      frame.scrollTop = nextTop;
-      markStaticDirty("scroll");
-    }
+    setViewScroll(nextLeft, nextTop, { syncFrame: false });
   }
 
   function updatePosition(point = player) {
     const p = fromWorld(point.x, point.y);
-    positionReadout.textContent = `${p.lon.toFixed(3)}E, ${p.lat.toFixed(3)}N`;
+    const text = `${p.lon.toFixed(3)}E, ${p.lat.toFixed(3)}N`;
+    if (text !== lastPositionText) {
+      positionReadout.textContent = text;
+      lastPositionText = text;
+    }
   }
 
   function updateSelectedPosition(place, fallbackPoint = null) {
@@ -2467,6 +2531,12 @@
   document.getElementById("zoomReset").addEventListener("click", () => setZoom(1));
 
   frame.addEventListener("scroll", () => {
+    if (syncingFrameScroll) return;
+    if (Math.abs(frame.scrollLeft - viewScrollLeft) < 0.5 && Math.abs(frame.scrollTop - viewScrollTop) < 0.5) return;
+    viewScrollLeft = frame.scrollLeft;
+    viewScrollTop = frame.scrollTop;
+    frameScrollSyncPending = false;
+    lastCameraMoveTime = performance.now();
     markStaticDirty("scroll");
   });
 
@@ -2516,8 +2586,8 @@
     dragPan.pointerId = pointer.pointerId;
     dragPan.startX = pointer.clientX;
     dragPan.startY = pointer.clientY;
-    dragPan.startScrollLeft = frame.scrollLeft;
-    dragPan.startScrollTop = frame.scrollTop;
+    dragPan.startScrollLeft = viewScrollLeft;
+    dragPan.startScrollTop = viewScrollTop;
     dragPan.moved = true;
     frame.classList.add("dragging");
   }
@@ -2541,8 +2611,8 @@
     dragPan.pointerId = event.pointerId;
     dragPan.startX = event.clientX;
     dragPan.startY = event.clientY;
-    dragPan.startScrollLeft = frame.scrollLeft;
-    dragPan.startScrollTop = frame.scrollTop;
+    dragPan.startScrollLeft = viewScrollLeft;
+    dragPan.startScrollTop = viewScrollTop;
     dragPan.moved = false;
     dragPan.suppressClick = false;
     frame.classList.add("dragging");
@@ -2571,8 +2641,7 @@
     const dx = event.clientX - dragPan.startX;
     const dy = event.clientY - dragPan.startY;
     if (Math.abs(dx) + Math.abs(dy) > 3) dragPan.moved = true;
-    frame.scrollLeft = dragPan.startScrollLeft - dx;
-    frame.scrollTop = dragPan.startScrollTop - dy;
+    setViewScroll(dragPan.startScrollLeft - dx, dragPan.startScrollTop - dy, { syncFrame: false });
     event.preventDefault();
   });
 
@@ -2598,6 +2667,7 @@
     dragPan.pointerId = null;
     dragPan.suppressClick = dragPan.moved;
     frame.classList.remove("dragging");
+    syncFrameScrollToView();
   }
 
   canvas.addEventListener("pointerup", endDragPan);

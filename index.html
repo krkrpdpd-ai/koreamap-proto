@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <title>한국 도트맵 게임 프로토타입</title>
-    <link rel="stylesheet" href="./styles.css?v=mobile-interface">
+    <link rel="stylesheet" href="./styles.css?v=viewport-renderer">
   </head>
   <body>
     <header class="topbar">
@@ -88,7 +88,9 @@
       </aside>
 
       <section class="map-frame" aria-label="스크롤 가능한 도트 지도">
-        <canvas id="mapCanvas"></canvas>
+        <div id="mapContent" class="map-content">
+          <canvas id="mapCanvas"></canvas>
+        </div>
       </section>
     </main>
 
@@ -96,6 +98,6 @@
     <script src="./src/data/real-overlays.js?v=official-rest-areas"></script>
     <script src="./src/data/maritime-data.js?v=ports-routes-clearance"></script>
     <script src="./src/data/culture-tourism-data.js?v=heritage-tourism"></script>
-    <script src="./src/main.js?v=mobile-interface" defer></script>
+    <script src="./src/main.js?v=viewport-renderer" defer></script>
   </body>
 </html>

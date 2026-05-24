@@ -269,14 +269,25 @@ body {
 
 .map-frame {
   overflow: auto;
+  position: relative;
   background:
     linear-gradient(135deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0)),
     #10212a;
   outline: none;
+  overscroll-behavior: contain;
+}
+
+.map-content {
+  position: relative;
+  min-width: 100%;
+  min-height: 100%;
 }
 
 #mapCanvas {
   display: block;
+  position: sticky;
+  top: 0;
+  left: 0;
   cursor: grab;
   image-rendering: pixelated;
   image-rendering: crisp-edges;

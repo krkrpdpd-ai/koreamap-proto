@@ -6,6 +6,7 @@
   const canvas = document.getElementById("mapCanvas");
   const ctx = canvas.getContext("2d");
   const frame = document.querySelector(".map-frame");
+  const mapContent = document.getElementById("mapContent");
   const inspectorTitle = document.getElementById("inspectorTitle");
   const inspectorBody = document.getElementById("inspectorBody");
   const positionReadout = document.getElementById("positionReadout");
@@ -61,6 +62,8 @@
   staticCanvas.height = mapHeight;
   const staticCtx = staticCanvas.getContext("2d");
   staticCtx.imageSmoothingEnabled = false;
+  let renderPixelRatio = 1;
+  const pathBoundsCache = new WeakMap();
 
   const keys = new Set();
   const sprites = new Map();
@@ -408,17 +411,96 @@
   function updateCanvasScale() {
     const scaledWidth = Math.round(mapWidth * state.zoom);
     const scaledHeight = Math.round(mapHeight * state.zoom);
-    canvas.width = scaledWidth;
-    canvas.height = scaledHeight;
-    staticCanvas.width = scaledWidth;
-    staticCanvas.height = scaledHeight;
+    const viewportWidth = Math.max(1, Math.floor(frame.clientWidth || frame.getBoundingClientRect().width || mapWidth));
+    const viewportHeight = Math.max(1, Math.floor(frame.clientHeight || frame.getBoundingClientRect().height || mapHeight));
+    renderPixelRatio = Math.max(1, Math.min(window.devicePixelRatio || 1, 2));
+
+    if (mapContent) {
+      mapContent.style.width = `${scaledWidth}px`;
+      mapContent.style.height = `${scaledHeight}px`;
+    }
+
+    const backingWidth = Math.max(1, Math.round(viewportWidth * renderPixelRatio));
+    const backingHeight = Math.max(1, Math.round(viewportHeight * renderPixelRatio));
+    canvas.width = backingWidth;
+    canvas.height = backingHeight;
+    staticCanvas.width = backingWidth;
+    staticCanvas.height = backingHeight;
     ctx.imageSmoothingEnabled = false;
     staticCtx.imageSmoothingEnabled = false;
-    canvas.style.width = `${scaledWidth}px`;
-    canvas.style.height = `${scaledHeight}px`;
+    canvas.style.width = `${viewportWidth}px`;
+    canvas.style.height = `${viewportHeight}px`;
+
+    frame.scrollLeft = Math.min(frame.scrollLeft, Math.max(0, scaledWidth - viewportWidth));
+    frame.scrollTop = Math.min(frame.scrollTop, Math.max(0, scaledHeight - viewportHeight));
     const zoomLevel = document.getElementById("zoomLevel");
     if (zoomLevel) zoomLevel.textContent = `${Math.round(state.zoom * 100)}%`;
     state.staticDirty = true;
+  }
+
+  function applyWorldTransform(target) {
+    target.setTransform(
+      renderPixelRatio * state.zoom,
+      0,
+      0,
+      renderPixelRatio * state.zoom,
+      -frame.scrollLeft * renderPixelRatio,
+      -frame.scrollTop * renderPixelRatio
+    );
+  }
+
+  function visibleWorldBounds(paddingPx = 96) {
+    const padding = paddingPx / state.zoom;
+    return {
+      left: frame.scrollLeft / state.zoom - padding,
+      top: frame.scrollTop / state.zoom - padding,
+      right: (frame.scrollLeft + frame.clientWidth) / state.zoom + padding,
+      bottom: (frame.scrollTop + frame.clientHeight) / state.zoom + padding
+    };
+  }
+
+  function pathBounds(points) {
+    if (!points?.length) return null;
+    const cached = pathBoundsCache.get(points);
+    if (cached) return cached;
+
+    let left = Infinity;
+    let top = Infinity;
+    let right = -Infinity;
+    let bottom = -Infinity;
+    for (const point of points) {
+      const x = Array.isArray(point) ? point[0] : point.x;
+      const y = Array.isArray(point) ? point[1] : point.y;
+      if (!Number.isFinite(x) || !Number.isFinite(y)) continue;
+      if (x < left) left = x;
+      if (x > right) right = x;
+      if (y < top) top = y;
+      if (y > bottom) bottom = y;
+    }
+
+    const bounds = { left, top, right, bottom };
+    pathBoundsCache.set(points, bounds);
+    return bounds;
+  }
+
+  function boundsIntersect(a, b) {
+    return !!a && a.left <= b.right && a.right >= b.left && a.top <= b.bottom && a.bottom >= b.top;
+  }
+
+  function pathIntersectsView(points, paddingPx = 96) {
+    return boundsIntersect(pathBounds(points), visibleWorldBounds(paddingPx));
+  }
+
+  function pathsIntersectView(paths, paddingPx = 96) {
+    return (paths || []).some((path) => pathIntersectsView(path, paddingPx));
+  }
+
+  function clientToWorld(clientX, clientY) {
+    const rect = canvas.getBoundingClientRect();
+    return {
+      x: (frame.scrollLeft + clientX - rect.left) / state.zoom,
+      y: (frame.scrollTop + clientY - rect.top) / state.zoom
+    };
   }
 
   function setZoom(nextZoom, anchor = null) {
@@ -450,7 +532,7 @@
   function drawStatic() {
     staticCtx.setTransform(1, 0, 0, 1, 0, 0);
     staticCtx.clearRect(0, 0, staticCanvas.width, staticCanvas.height);
-    staticCtx.setTransform(state.zoom, 0, 0, state.zoom, 0, 0);
+    applyWorldTransform(staticCtx);
     drawSea(staticCtx);
     if (state.showGrid) drawGrid(staticCtx);
     drawLand(staticCtx);
@@ -803,6 +885,7 @@
 
     for (const road of roads) {
       if (!isRoadVisible(road)) continue;
+      if (!pathIntersectsView(road.path, 120)) continue;
       const color = road.class === "expressway" ? palette.expressway : palette.national;
       drawWorldStroke(target, road.path, color, road.class === "expressway" ? 4.2 : 2.8, true);
 
@@ -823,6 +906,7 @@
     if (!route || route.type !== "road" || !isRoadClassEnabled(route)) return;
     const width = route.class === "expressway" ? 6.4 : 4.8;
     const paths = route.paths || (route.path ? [route.path] : []);
+    if (!pathsIntersectView(paths, 140)) return;
     for (const path of paths) {
       drawWorldStroke(target, path, color, width, true);
     }
@@ -843,6 +927,7 @@
     target.lineCap = "round";
 
     for (const river of real.rivers) {
+      if (!pathIntersectsView(river.path, 140)) continue;
       drawWorldStroke(target, river.path, palette.river, river.displayWidth || 4, true);
       if (river === state.selectedPlace || river === state.hoverPlace) {
         drawWorldStroke(target, river.path, river === state.selectedPlace ? palette.selected : "#bdf3ff", (river.displayWidth || 4) + 3, true);
@@ -864,6 +949,7 @@
 
     const rails = real.railways.filter(isMajorRailway);
     for (const rail of rails) {
+      if (!pathIntersectsView(rail.path, 120)) continue;
       drawWorldStroke(target, rail.path, palette.rail, 2.6, true);
       if (rail === state.selectedPlace || rail === state.hoverPlace) {
         drawWorldStroke(target, rail.path, rail === state.selectedPlace ? palette.selected : "#bdf3ff", 5, true);
@@ -881,6 +967,7 @@
     target.lineCap = "round";
     for (const route of maritimeRoutes) {
       if (!isSeaRouteVisible(route)) continue;
+      if (!pathIntersectsView(route.path, 140)) continue;
       drawWorldStroke(target, route.path, "rgba(29, 61, 93, 0.82)", 6.5, true);
       drawDashedWorldStroke(target, route.path, palette.seaRoute, 2.8, true, 10, 7);
       if (route === state.selectedPlace || route === state.hoverPlace) {
@@ -1029,6 +1116,7 @@
 
   function drawWorldStroke(target, points, color, width, fixedScreenWidth = false) {
     if (points.length < 2) return;
+    if (!pathIntersectsView(points, Math.max(96, width * state.zoom * 3))) return;
     target.beginPath();
     target.moveTo(points[0][0], points[0][1]);
     for (let i = 1; i < points.length; i++) {
@@ -1698,7 +1786,7 @@
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     ctx.drawImage(staticCanvas, 0, 0);
-    ctx.setTransform(state.zoom, 0, 0, state.zoom, 0, 0);
+    applyWorldTransform(ctx);
     drawPlayer(ctx);
     ctx.setTransform(1, 0, 0, 1, 0, 0);
   }
@@ -2278,6 +2366,17 @@
   document.getElementById("zoomIn").addEventListener("click", () => setZoom(state.zoom + 0.15));
   document.getElementById("zoomReset").addEventListener("click", () => setZoom(1));
 
+  frame.addEventListener("scroll", () => {
+    state.staticDirty = true;
+  });
+
+  if (window.ResizeObserver) {
+    const resizeObserver = new ResizeObserver(() => updateCanvasScale());
+    resizeObserver.observe(frame);
+  } else {
+    window.addEventListener("resize", updateCanvasScale);
+  }
+
   frame.addEventListener(
     "wheel",
     (event) => {
@@ -2424,18 +2523,14 @@
       dragPan.suppressClick = false;
       return;
     }
-    const rect = canvas.getBoundingClientRect();
-    const x = (event.clientX - rect.left) / state.zoom;
-    const y = (event.clientY - rect.top) / state.zoom;
+    const { x, y } = clientToWorld(event.clientX, event.clientY);
     const place = findNearestPlace(x, y, 24 / state.zoom);
     if (place) updateInspector(place, { x, y });
   });
 
   canvas.addEventListener("mousemove", (event) => {
     if (dragPan.active) return;
-    const rect = canvas.getBoundingClientRect();
-    const x = (event.clientX - rect.left) / state.zoom;
-    const y = (event.clientY - rect.top) / state.zoom;
+    const { x, y } = clientToWorld(event.clientX, event.clientY);
     const place = findNearestPlace(x, y, 20 / state.zoom);
     if (place !== state.hoverPlace) {
       state.hoverPlace = place;

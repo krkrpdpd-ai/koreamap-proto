@@ -546,6 +546,10 @@
     state.staticDirty = true;
   }
 
+  function markFeatureOverlayDirty() {
+    staticDirtyReason = staticTileCache.size ? staticDirtyReason : "content";
+  }
+
   function maxScrollLeft() {
     return Math.max(0, Math.round(mapWidth * state.zoom) - frame.clientWidth);
   }
@@ -699,10 +703,11 @@
     const specs = visibleStaticTileSpecs();
     let built = 0;
     let missing = false;
+    const buildBudget = staticDirtyReason === "content" ? specs.length : staticTileBuildBudgetPerFrame;
 
     for (const spec of specs) {
       let tile = staticTileCache.get(spec.key);
-      if (!tile && built < staticTileBuildBudgetPerFrame) {
+      if (!tile && built < buildBudget) {
         tile = createStaticTile(spec);
         staticTileCache.set(spec.key, tile);
         built += 1;
@@ -737,7 +742,11 @@
       bottom: (spec.screenTop + staticTileSizePx) / state.zoom
     };
     const previousBounds = renderWorldBoundsOverride;
+    const previousSelected = state.selectedPlace;
+    const previousHover = state.hoverPlace;
     renderWorldBoundsOverride = tileBounds;
+    state.selectedPlace = null;
+    state.hoverPlace = null;
 
     tileCtx.save();
     try {
@@ -750,6 +759,8 @@
     } finally {
       tileCtx.restore();
       renderWorldBoundsOverride = previousBounds;
+      state.selectedPlace = previousSelected;
+      state.hoverPlace = previousHover;
     }
 
     return { canvas: tileCanvas, lastUsed: staticTileFrame };
@@ -1342,6 +1353,41 @@
     target.strokeStyle = color;
     target.lineWidth = fixedScreenWidth ? width / state.zoom : width;
     target.stroke();
+  }
+
+  function drawDynamicFeatureHighlights(target) {
+    drawFeatureHighlight(target, state.hoverPlace, "#bdf3ff");
+    if (state.selectedPlace !== state.hoverPlace) {
+      drawFeatureHighlight(target, state.selectedPlace, palette.selected);
+    }
+  }
+
+  function drawFeatureHighlight(target, feature, color) {
+    if (!feature) return;
+    if (feature.type === "road") {
+      drawRoadRouteHighlight(target, feature, color);
+      return;
+    }
+    if (feature.type === "river" && feature.path?.length) {
+      drawWorldStroke(target, feature.path, color, (feature.displayWidth || 4) + 3, true);
+      return;
+    }
+    if (feature.type === "railway" && feature.path?.length) {
+      drawWorldStroke(target, feature.path, color, 5, true);
+      return;
+    }
+    if (feature.type === "seaRoute" && feature.path?.length) {
+      drawWorldStroke(target, feature.path, color, 6, true);
+      return;
+    }
+    const point = placePoint(feature);
+    if (!pointIntersectsView(point.x, point.y, 180)) return;
+    const markerSize = 40 / state.zoom;
+    target.save();
+    target.strokeStyle = color;
+    target.lineWidth = 3 / state.zoom;
+    target.strokeRect(Math.round(point.x - markerSize / 2), Math.round(point.y - markerSize / 2), markerSize, markerSize);
+    target.restore();
   }
 
   function drawDashedWorldStroke(target, points, color, width, fixedScreenWidth = false, dash = 8, gap = 6) {
@@ -2062,6 +2108,7 @@
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     renderStaticTiles(ctx);
     applyWorldTransform(ctx);
+    drawDynamicFeatureHighlights(ctx);
     drawPlayer(ctx);
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     maybeSyncFrameScroll(now);
@@ -2217,7 +2264,7 @@
       const roadType = place.class === "expressway" ? "고속도로" : "국도";
       const segmentText = place.segmentCount ? ` 원본 ${place.segmentCount.toLocaleString("ko-KR")}개 선 조각을 하나의 노선으로 묶어 선택했습니다.` : "";
       inspectorBody.textContent = `${roadType}. OSM 기반 도로 경로이며, 현재 지도에는 약 ${formatKm(place.lengthKm)} 구간으로 표시됩니다.${segmentText}`;
-      markStaticDirty("content");
+      markFeatureOverlayDirty();
       return;
     }
 
@@ -2229,7 +2276,7 @@
       const parking = Number.isFinite(place.parkingSpaces) ? ` 주차 ${place.parkingSpaces.toLocaleString("ko-KR")}면.` : "";
       const amenities = formatRestAreaAmenities(place.amenities);
       inspectorBody.textContent = `${place.restType || "고속도로 휴게소"}. ${route || "고속도로"}의 공식 표준데이터 위치입니다.${food}${phone}${parking}${amenities}`;
-      markStaticDirty("content");
+      markFeatureOverlayDirty();
       return;
     }
 
@@ -2237,7 +2284,7 @@
       inspectorTitle.textContent = place.name;
       const region = place.region ? `${place.region}. ` : "";
       inspectorBody.textContent = `항구. ${region}${place.role || "연안 여객 항구"}입니다. ${place.description || "지도 위 주요 해상 교통 거점으로 표시됩니다."}`;
-      markStaticDirty("content");
+      markFeatureOverlayDirty();
       return;
     }
 
@@ -2246,7 +2293,7 @@
       const endpoint = [place.from, place.to].filter(Boolean).join(" → ");
       const distance = Number.isFinite(place.lengthKm) ? ` 약 ${formatKm(place.lengthKm)}.` : "";
       inspectorBody.textContent = `뱃길. ${place.category || "대표 여객 항로"}${endpoint ? ` (${endpoint})` : ""}.${distance} ${place.description || "실제 항법용 해도가 아닌 게임 지도용 대표 항로입니다."}`;
-      markStaticDirty("content");
+      markFeatureOverlayDirty();
       return;
     }
 
@@ -2254,14 +2301,14 @@
       inspectorTitle.textContent = place.name;
       const width = place.widthMeters ? ` 추정 폭은 약 ${place.widthMeters.toLocaleString("ko-KR")}m입니다.` : "";
       inspectorBody.textContent = `주요 강. OSM 기반 수계 경로이며, 현재 지도에는 약 ${formatKm(place.lengthKm)} 구간으로 표시됩니다.${width}`;
-      markStaticDirty("content");
+      markFeatureOverlayDirty();
       return;
     }
 
     if (place.type === "railway") {
       inspectorTitle.textContent = place.name;
       inspectorBody.textContent = `주요 철도 노선. OSM 기반 철도 경로이며, 현재 지도에는 약 ${formatKm(place.lengthKm)} 구간으로 표시됩니다.`;
-      markStaticDirty("content");
+      markFeatureOverlayDirty();
       return;
     }
 
@@ -2270,7 +2317,7 @@
       const nameEn = place.nameEn ? ` / ${place.nameEn}` : "";
       const area = [place.province, place.city].filter(Boolean).join(" / ");
       inspectorBody.textContent = `철도역${nameEn}. HOT/HDX OSM 철도역 포인트 기반 위치입니다.${area ? ` 위치 분류: ${area}.` : ""}`;
-      markStaticDirty("content");
+      markFeatureOverlayDirty();
       return;
     }
 
@@ -2279,7 +2326,7 @@
       const region = place.region ? `${place.region}. ` : "";
       const era = place.era ? `${place.era} 시대. ` : "";
       inspectorBody.textContent = `문화유적. ${region}${place.category || "문화유산"}. ${era}${place.description || "대표 문화유산 지점으로 표시됩니다."}`;
-      markStaticDirty("content");
+      markFeatureOverlayDirty();
       return;
     }
 
@@ -2287,21 +2334,21 @@
       inspectorTitle.textContent = place.name;
       const region = place.region ? `${place.region}. ` : "";
       inspectorBody.textContent = `관광지. ${region}${place.category || "대표 관광지"}. ${place.description || "게임 지도에서 방문 지점으로 활용할 수 있는 관광 명소입니다."}`;
-      markStaticDirty("content");
+      markFeatureOverlayDirty();
       return;
     }
 
     if (place.kind === "nationalPark") {
       inspectorTitle.textContent = place.name;
       inspectorBody.textContent = describeNationalPark(place);
-      markStaticDirty("content");
+      markFeatureOverlayDirty();
       return;
     }
 
     if (place.icon === "lake") {
       inspectorTitle.textContent = place.name;
       inspectorBody.textContent = `호수. ${lakeDetails[place.id] || "주요 수변 지형으로 지도 위 자연 요소로 표시됩니다."}`;
-      markStaticDirty("content");
+      markFeatureOverlayDirty();
       return;
     }
 
@@ -2309,21 +2356,21 @@
       inspectorTitle.textContent = place.name;
       const elevation = place.elevation ? `${Math.round(place.elevation).toLocaleString("ko-KR")}m` : "고도 정보 없음";
       inspectorBody.textContent = `${elevation}. ${place.description}`;
-      markStaticDirty("content");
+      markFeatureOverlayDirty();
       return;
     }
 
     if (place.kind === "island") {
       inspectorTitle.textContent = place.name;
       inspectorBody.textContent = `섬. ${place.description || "OSM 또는 보정 좌표 기반으로 표시한 주요 섬입니다."}`;
-      markStaticDirty("content");
+      markFeatureOverlayDirty();
       return;
     }
 
     inspectorTitle.textContent = place.name;
     const area = place.province ? `${place.province} / ` : "";
     inspectorBody.textContent = `${area}${kindLabel(place.kind)}. ${place.motif || "OSM"} 모티프 아이콘으로 표시됩니다.`;
-    markStaticDirty("content");
+    markFeatureOverlayDirty();
   }
 
   function kindLabel(kind) {
@@ -2825,7 +2872,7 @@
     if (place !== state.hoverPlace) {
       state.hoverPlace = place;
       canvas.style.cursor = place ? "pointer" : "grab";
-      markStaticDirty("content");
+      markFeatureOverlayDirty();
     }
   });
 

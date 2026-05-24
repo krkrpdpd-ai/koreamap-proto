@@ -37,7 +37,7 @@
     showBoundaries: false,
     showLabels: true,
     showGrid: true,
-    zoom: 1,
+    zoom: 15,
     staticDirty: true,
     hoverPlace: null,
     selectedPlace: (real?.places && real.places[0]) || data.places[0]
@@ -50,6 +50,7 @@
   const kmPerDegLon = 111.32 * Math.cos((data.meta.midLat * Math.PI) / 180);
   const margin = 70;
   const fixedIconScale = 1.28;
+  const playerScale = 0.1;
   const mapWidth = Math.ceil(((bounds.east - bounds.west) * kmPerDegLon / tileKm) * tilePx) + margin * 2;
   const mapHeight = Math.ceil(((bounds.north - bounds.south) * kmPerDegLat / tileKm) * tilePx) + margin * 2;
 
@@ -505,7 +506,7 @@
 
   function setZoom(nextZoom, anchor = null) {
     const oldZoom = state.zoom;
-    const clamped = clamp(nextZoom, 0.65, 10);
+    const clamped = clamp(nextZoom, 0.65, 15);
     if (Math.abs(clamped - oldZoom) < 0.001) return;
 
     const target = anchor || {
@@ -1807,7 +1808,9 @@
     const step = Math.floor(player.frame / 12) % 2;
     const legA = step === 0 ? 0 : 1;
     target.save();
-    target.translate(x - 9, y - 18);
+    target.translate(x, y);
+    target.scale(playerScale, playerScale);
+    target.translate(-9, -18);
     const px = (a, b, w, h, color) => {
       target.fillStyle = color;
       target.fillRect(a, b, w, h);

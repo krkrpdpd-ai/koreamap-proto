@@ -722,7 +722,7 @@
         drawIcon(target, "field", field.center[0], field.center[1], 0.82);
       }
       if (state.showLabels && state.zoom >= 1.55 && labels < 10 && field.labelWeight <= 5) {
-        drawLabel(target, field.name, field.center[0] + 13, field.center[1] + 4, 10);
+        drawLabelNear(target, field.name, field.center[0], field.center[1], 10, 8, 3);
         labels += 1;
       }
     }
@@ -744,7 +744,7 @@
         drawIcon(target, park.icon || "park", park.point[0], park.point[1], 0.76, true);
       }
       if (state.showLabels && labels < 18 && park.labelWeight <= (state.zoom >= 1.35 ? 4 : 2)) {
-        drawLabel(target, park.name, park.point[0] + 11, park.point[1] + 4, 10);
+        drawLabelNear(target, park.name, park.point[0], park.point[1], 10, 7, 3);
         labels += 1;
       }
     }
@@ -772,7 +772,7 @@
       }
 
       if (state.showLabels && state.zoom >= 1.15 && range.labelPoint) {
-        drawLabel(target, range.name, range.labelPoint[0] + 8, range.labelPoint[1] - 8, 11);
+        drawLabelNear(target, range.name, range.labelPoint[0], range.labelPoint[1], 11, 7, -5);
       }
     }
 
@@ -790,7 +790,7 @@
 
       if (state.showLabels && labels < 22 && peak.labelWeight <= (state.zoom >= 1.45 ? 4 : 2)) {
         const elevation = peak.elevation ? ` ${Math.round(peak.elevation)}m` : "";
-        drawLabel(target, `${peak.name}${elevation}`, peak.point[0] + 10, peak.point[1] - 6, 10);
+        drawLabelNear(target, `${peak.name}${elevation}`, peak.point[0], peak.point[1], 10, 7, -4);
         labels += 1;
       }
     }
@@ -806,7 +806,7 @@
       if (state.showLabels) {
         const mid = river.points[Math.floor(river.points.length / 2)];
         const p = toWorld(mid);
-        drawLabel(target, river.name, p.x + 12, p.y - 8, 12);
+        drawLabelNear(target, river.name, p.x, p.y, 12, 7, -4);
       }
     }
   }
@@ -823,7 +823,7 @@
       if (state.showLabels && road.type === "expressway") {
         const mid = road.points[Math.floor(road.points.length / 2)];
         const p = toWorld(mid);
-        drawLabel(target, road.name, p.x + 8, p.y - 10, 11);
+        drawLabelNear(target, road.name, p.x, p.y, 11, 7, -5);
       }
     }
   }
@@ -846,7 +846,7 @@
       drawCurvedPixelPath(target, points, palette.boundary, 2, 8, { wiggle: 0.2, dash: true });
       if (state.showLabels && boundary.labelPoint) {
         const p = toWorld(boundary.labelPoint);
-        drawLabel(target, boundary.name, p.x + 6, p.y + 4, 10);
+        drawLabelNear(target, boundary.name, p.x, p.y, 10, 6, 3);
       }
     }
   }
@@ -868,7 +868,7 @@
     if (state.showLabels) {
       for (const province of real.provinces) {
         const center = provinceLabelPoint(province);
-        if (center) drawLabel(target, province.name, center[0] + 4, center[1] + 4, 10);
+        if (center) drawLabelNear(target, province.name, center[0], center[1], 10, 4, 3);
       }
     }
     target.restore();
@@ -892,7 +892,7 @@
       if (state.showLabels && road.name && labelCount < 28 && road.length > 9000 && !labeled.has(road.name)) {
         if (road.class === "national" && state.zoom < 1.35) continue;
         const p = road.path[Math.floor(road.path.length / 2)];
-        drawLabel(target, road.name, p[0] + 8, p[1] - 8, 10);
+        drawLabelNear(target, road.name, p[0], p[1], 10, 7, -5);
         labeled.add(road.name);
         labelCount += 1;
       }
@@ -935,7 +935,7 @@
 
       if (state.showLabels && river.name && river.length > 12000 && !labeled.has(river.name)) {
         const p = river.path[Math.floor(river.path.length / 2)];
-        drawLabel(target, river.name, p[0] + 10, p[1] - 6, 11);
+        drawLabelNear(target, river.name, p[0], p[1], 11, 7, -4);
         labeled.add(river.name);
       }
     }
@@ -975,7 +975,7 @@
       }
       if (state.showLabels && shouldShowSeaRouteLabel(route)) {
         const p = route.path[Math.floor(route.path.length / 2)];
-        drawLabel(target, route.name, p[0] + 10 / state.zoom, p[1] - 6 / state.zoom, route.labelWeight <= 1 ? 10 : 9);
+        drawLabelNear(target, route.name, p[0], p[1], route.labelWeight <= 1 ? 10 : 9, 7, -4);
       }
     }
     target.restore();
@@ -1002,7 +1002,7 @@
         (state.zoom >= 1.35 && port.labelWeight <= 3) ||
         (state.zoom >= 2.2 && port.labelWeight <= 4);
       if (state.showLabels && showPortLabel && labels < 34) {
-        drawLabel(target, port.name, p.x + 8 / state.zoom, p.y - 2 / state.zoom, port.labelWeight <= 1 ? 10 : 9);
+        drawLabelNear(target, port.name, p.x, p.y, port.labelWeight <= 1 ? 10 : 9, 6, -2);
         labels += 1;
       }
     }
@@ -1031,7 +1031,7 @@
         (state.zoom >= 1.75 && station.labelWeight <= 4) ||
         (state.zoom >= 2.65 && station.labelWeight <= 6);
       if (state.showLabels && showStationLabel && labels < 38) {
-        drawLabel(target, station.name, p.x + 8, p.y - 2, station.labelWeight <= 1 ? 10 : 9);
+        drawLabelNear(target, station.name, p.x, p.y, station.labelWeight <= 1 ? 10 : 9, 6, -2);
         labels += 1;
       }
     }
@@ -1060,7 +1060,7 @@
         (state.zoom >= 1.6 && area.labelWeight <= 4) ||
         (state.zoom >= 2.4 && area.labelWeight <= 6);
       if (state.showLabels && showRestAreaLabel && labels < 36) {
-        drawLabel(target, area.name, p.x + 8 / state.zoom, p.y - 1 / state.zoom, area.labelWeight <= 2 ? 10 : 9);
+        drawLabelNear(target, area.name, p.x, p.y, area.labelWeight <= 2 ? 10 : 9, 6, -1);
         labels += 1;
       }
     }
@@ -1174,7 +1174,7 @@
         target.fillRect(Math.round(p.x - markerSize / 2), Math.round(p.y - markerSize / 2), markerSize, markerSize);
       }
       drawIcon(target, feature.icon, p.x, p.y, scale);
-      if (state.showLabels) drawLabel(target, feature.name, p.x + 14, p.y + 5, 11);
+      if (state.showLabels) drawLabelNear(target, feature.name, p.x, p.y, 11, 8, 3);
     }
   }
 
@@ -1193,7 +1193,7 @@
       drawIcon(target, place.icon, p.x, p.y, scale, true);
       const showCountyLabel = place.kind === "county" && state.zoom >= 1.15 && place.labelWeight <= 5;
       if (state.showLabels && (place.labelWeight <= 4 || showCountyLabel)) {
-        drawLabel(target, place.name, p.x + 7, p.y - 1, place.labelWeight <= 1 ? 13 : place.kind === "county" ? 10 : 11);
+        drawLabelNear(target, place.name, p.x, p.y, place.labelWeight <= 1 ? 13 : place.kind === "county" ? 10 : 11, 5, -1);
       }
     }
   }
@@ -1214,7 +1214,7 @@
       const showIslandLabel =
         island.labelWeight <= 4 || (island.labelWeight <= 5 && state.zoom >= 1.25) || (island.labelWeight <= 6 && state.zoom >= 1.75);
       if (state.showLabels && showIslandLabel) {
-        drawLabel(target, island.name, p.x + 7, p.y - 1, island.labelWeight <= 1 ? 12 : 10);
+        drawLabelNear(target, island.name, p.x, p.y, island.labelWeight <= 1 ? 12 : 10, 5, -1);
       }
     }
   }
@@ -1232,7 +1232,7 @@
       drawIcon(target, mountain.icon || "mountain", p.x, p.y, mountain.id === "halla" ? 1.06 : 0.96, true);
       if (state.showLabels) {
         const elevation = state.zoom >= 1.35 && mountain.elevation ? ` ${Math.round(mountain.elevation)}m` : "";
-        drawLabel(target, `${mountain.name}${elevation}`, p.x + 7, p.y - 1, 11);
+        drawLabelNear(target, `${mountain.name}${elevation}`, p.x, p.y, 11, 5, -1);
       }
     }
   }
@@ -1263,7 +1263,7 @@
         (state.zoom >= 1.35 && (feature.labelWeight || 9) <= 4) ||
         (state.zoom >= 2.1 && (feature.labelWeight || 9) <= 6);
       if (state.showLabels && showLabel && labels < 46) {
-        drawLabel(target, feature.name, p.x + 8 / state.zoom, p.y - 2 / state.zoom, feature.labelWeight <= 1 ? 10 : 9);
+        drawLabelNear(target, feature.name, p.x, p.y, feature.labelWeight <= 1 ? 10 : 9, 6, -2);
         labels += 1;
       }
     }
@@ -1389,7 +1389,7 @@
 
     if (state.showLabels && zone.labelPoint) {
       const p = toWorld(zone.labelPoint);
-      drawLabel(target, zone.name, p.x + 8, p.y - 8, 12);
+      drawLabelNear(target, zone.name, p.x, p.y, 12, 7, -5);
     }
   }
 
@@ -1422,6 +1422,10 @@
     target.fillRect(left + 5, top + h - 9, Math.max(3, w - 10), 3);
     target.fillStyle = "#dfe7d5";
     target.fillRect(left + Math.floor(w / 2) - 1, top + 1, 3, 3);
+  }
+
+  function drawLabelNear(target, text, x, y, size, dx = 6, dy = -2) {
+    drawLabel(target, text, x + dx / state.zoom, y + dy / state.zoom, size);
   }
 
   function drawLabel(target, text, x, y, size) {
@@ -1462,27 +1466,58 @@
     };
 
     px(9, 20, 6, 3, "rgba(0,0,0,0.28)");
+    const farm = {
+      outline: "#3f2e24",
+      roof: "#b9553f",
+      roofLight: "#df7651",
+      wall: "#efd38f",
+      wallShade: "#c99f5a",
+      wood: "#76513a",
+      grass: "#6fae5f",
+      grassDark: "#4f8148",
+      water: "#58b6c5",
+      waterLight: "#a9e2dc",
+      stone: "#8b8170",
+      gold: "#f1c45d"
+    };
+
+    const cottage = (roof = farm.roof, wall = farm.wall, accent = farm.gold) => {
+      px(5, 11, 14, 8, farm.outline);
+      px(6, 10, 12, 8, wall);
+      px(4, 8, 16, 3, farm.outline);
+      px(5, 7, 14, 3, roof);
+      px(7, 6, 10, 2, farm.roofLight);
+      px(8, 13, 3, 5, farm.wood);
+      px(14, 12, 3, 3, accent);
+      px(15, 13, 1, 1, "#fff0b8");
+      px(6, 18, 12, 2, farm.grassDark);
+    };
+
+    const tree = () => {
+      px(10, 14, 4, 7, farm.wood);
+      px(6, 8, 7, 7, farm.grass);
+      px(12, 7, 7, 8, "#78b96a");
+      px(8, 12, 9, 6, "#5d9d56");
+      px(10, 6, 4, 3, "#9bd27d");
+    };
 
     const baseMarker = (color = "#f2d27c") => {
-      px(6, 7, 12, 10, "#2b2e34");
-      px(7, 6, 10, 10, color);
-      px(10, 16, 4, 4, color);
+      cottage(farm.roof, color, "#7fc7d1");
     };
 
     switch (theme) {
       case "capital":
-        px(4, 10, 16, 3, "#b83c32");
-        px(6, 7, 12, 3, "#d94e3f");
-        px(7, 13, 10, 7, "#e9d48a");
-        px(8, 15, 2, 5, "#835236");
-        px(14, 15, 2, 5, "#835236");
-        px(11, 4, 2, 4, "#f5e177");
+        cottage("#a94638", "#f0d38a", "#7fc7d1");
+        px(10, 3, 4, 4, farm.gold);
+        px(9, 6, 6, 2, "#f8df7a");
         break;
       case "port":
-        px(4, 15, 16, 4, "#4bc3d3");
-        px(5, 11, 13, 4, "#f1f0d1");
-        px(8, 8, 8, 3, "#d86048");
-        px(11, 5, 2, 6, "#2b2e34");
+        px(4, 16, 16, 4, palette.seaRouteDark);
+        px(6, 12, 12, 4, palette.port);
+        px(8, 10, 8, 2, "#d8d0b0");
+        px(11, 5, 2, 6, farm.gold);
+        px(5, 20, 14, 2, palette.seaRoute);
+        px(7, 14, 10, 2, palette.portDark);
         break;
       case "airport":
         px(5, 12, 14, 3, "#d8e5e7");
@@ -1521,16 +1556,16 @@
         px(14, 14, 2, 2, "#c76e2e");
         break;
       case "heritage":
-        px(5, 8, 14, 11, palette.heritageDark);
-        px(6, 7, 12, 10, palette.heritage);
-        px(8, 5, 8, 3, "#f4f1de");
-        px(10, 13, 4, 6, "#4b3427");
+        cottage("#8e4a34", palette.heritage, "#f4f1de");
+        px(4, 7, 16, 2, "#5f3529");
+        px(8, 5, 8, 2, "#e7c06a");
         break;
       case "tourist":
-        px(6, 7, 12, 12, palette.tourismDark);
-        px(7, 6, 10, 10, palette.tourism);
-        px(10, 9, 4, 4, "#f4f1de");
-        px(11, 16, 2, 4, "#f4f1de");
+        px(7, 7, 10, 10, palette.tourism);
+        px(6, 10, 12, 7, palette.tourismDark);
+        px(9, 9, 6, 5, "#f4f1de");
+        px(11, 11, 2, 2, "#26313a");
+        px(10, 17, 4, 3, farm.wood);
         break;
       case "palace":
         px(4, 9, 16, 2, "#c84f38");
@@ -1575,29 +1610,29 @@
         px(9, 15, 6, 5, "#e3c675");
         break;
       case "field":
-        px(5, 6, 14, 14, "#c8b05a");
-        px(7, 8, 2, 10, "#6a9f58");
-        px(11, 8, 2, 10, "#6a9f58");
-        px(15, 8, 2, 10, "#6a9f58");
+        px(5, 7, 14, 12, "#c8b05a");
+        px(6, 9, 12, 2, "#dfc96f");
+        px(7, 8, 2, 10, farm.grass);
+        px(11, 8, 2, 10, farm.grass);
+        px(15, 8, 2, 10, farm.grass);
+        px(6, 18, 12, 2, farm.grassDark);
         break;
       case "park":
-        px(10, 5, 4, 12, "#2f7f4f");
-        px(6, 8, 6, 6, "#6f8f54");
-        px(12, 7, 7, 7, "#6f8f54");
-        px(8, 13, 9, 5, "#4c9f5f");
-        px(10, 17, 4, 4, "#7c5a38");
+        tree();
         break;
       case "mountain":
       case "snow":
-        px(4, 18, 16, 3, "#3b513c");
-        px(6, 14, 12, 4, "#6f8f54");
-        px(8, 10, 8, 4, "#6f8f54");
-        px(10, 7, 4, 3, theme === "snow" ? "#f4f1de" : "#536f47");
+        px(4, 18, 16, 3, farm.grassDark);
+        px(5, 15, 14, 4, "#496b43");
+        px(7, 11, 10, 5, "#6f8f54");
+        px(9, 8, 6, 4, theme === "snow" ? "#f4f1de" : "#8dae62");
+        px(11, 7, 2, 2, "#f5efd7");
         break;
       case "lake":
-        px(5, 9, 14, 8, "#63c5da");
-        px(7, 7, 10, 2, "#9be2ed");
-        px(8, 14, 8, 2, "#2b7fa0");
+        px(5, 10, 14, 7, farm.water);
+        px(7, 8, 10, 2, farm.waterLight);
+        px(7, 15, 11, 2, "#2b7fa0");
+        px(4, 17, 16, 2, farm.grassDark);
         break;
       case "wave":
         px(4, 11, 5, 3, "#9be2ed");
@@ -1613,11 +1648,9 @@
         px(10, 14, 4, 6, "#4b3427");
         break;
       case "government":
-        px(5, 9, 14, 10, "#d8d0b0");
-        px(4, 7, 16, 2, "#7da2c6");
-        px(7, 12, 2, 7, "#576878");
-        px(11, 12, 2, 7, "#576878");
-        px(15, 12, 2, 7, "#576878");
+        cottage("#7198ad", "#e6d6a6", "#f4f1de");
+        px(7, 12, 2, 6, "#576878");
+        px(15, 12, 2, 6, "#576878");
         break;
       case "light":
         px(11, 6, 2, 12, "#ffd36b");
@@ -1633,10 +1666,10 @@
         px(9, 16, 6, 2, "#63c5da");
         break;
       case "market":
-        px(5, 9, 14, 10, "#d86048");
-        px(6, 7, 12, 3, "#f4f1de");
-        px(8, 13, 3, 6, "#ffd36b");
-        px(13, 13, 3, 6, "#69c7b8");
+        cottage("#d86048", "#f4d58d", "#69c7b8");
+        px(6, 8, 12, 2, "#f4f1de");
+        px(8, 13, 3, 5, "#ffd36b");
+        px(13, 13, 3, 5, "#69c7b8");
         break;
       case "gate":
         px(4, 8, 16, 3, "#d86048");
@@ -1645,10 +1678,8 @@
         px(14, 13, 3, 7, "#7c4d25");
         break;
       case "village":
-        px(5, 12, 7, 7, palette.tourism);
-        px(13, 10, 6, 9, "#f2d27c");
-        px(4, 10, 9, 2, "#d86048");
-        px(12, 8, 8, 2, "#7c4d25");
+        cottage("#cf6b45", "#f2d27c", palette.tourism);
+        px(4, 14, 4, 5, palette.tourism);
         break;
       case "riverRock":
         px(4, 16, 16, 3, "#63c5da");
@@ -1670,39 +1701,32 @@
         px(7, 18, 10, 2, "#2b7fa0");
         break;
       case "restArea":
-        px(5, 7, 14, 10, "#2b2e34");
-        px(6, 6, 12, 10, palette.restArea);
-        px(8, 8, 8, 2, palette.restAreaDark);
-        px(8, 12, 5, 3, "#2b2e34");
-        px(15, 10, 2, 6, "#2b2e34");
-        px(7, 17, 10, 2, palette.restAreaDark);
-        px(10, 19, 4, 2, palette.restAreaDark);
+        cottage("#d77d3f", palette.restArea, "#7fc7d1");
+        px(7, 8, 10, 2, palette.restAreaDark);
+        px(8, 13, 5, 3, "#2b2e34");
+        px(15, 11, 2, 6, "#2b2e34");
         break;
       case "station":
-        px(5, 8, 14, 10, "#252b30");
-        px(6, 7, 12, 10, "#f2d27c");
-        px(8, 9, 3, 3, "#26313a");
-        px(13, 9, 3, 3, "#26313a");
-        px(8, 14, 8, 2, "#9b7950");
-        px(5, 18, 14, 2, "#d8d0b0");
+        cottage("#6f8f54", "#f2d27c", "#7fc7d1");
+        px(7, 18, 12, 2, "#d8d0b0");
         px(7, 20, 2, 2, "#252b30");
         px(15, 20, 2, 2, "#252b30");
         break;
       case "port":
-        px(4, 15, 16, 4, palette.portDark);
-        px(6, 11, 12, 4, palette.port);
-        px(8, 8, 8, 3, "#d8d0b0");
-        px(11, 4, 2, 4, "#f2d27c");
-        px(5, 19, 14, 2, palette.seaRouteDark);
-        px(7, 21, 3, 1, palette.seaRoute);
-        px(14, 21, 3, 1, palette.seaRoute);
+        px(4, 16, 16, 4, palette.seaRouteDark);
+        px(6, 12, 12, 4, palette.port);
+        px(8, 10, 8, 2, "#d8d0b0");
+        px(11, 5, 2, 6, farm.gold);
+        px(5, 20, 14, 2, palette.seaRoute);
+        px(7, 14, 10, 2, palette.portDark);
         break;
       case "island":
       case "lighthouse":
         px(5, 16, 14, 4, "#c8b05a");
+        px(7, 14, 10, 2, farm.grass);
         px(9, 7, 6, 9, "#f4f1de");
         px(10, 5, 4, 2, "#d86048");
-        px(7, 14, 10, 2, "#4c9f5f");
+        px(10, 10, 4, 2, farm.waterLight);
         break;
       case "mine":
         px(6, 15, 12, 5, "#5b6468");
@@ -1747,6 +1771,32 @@
       default:
         baseMarker();
     }
+
+    const original = g.getImageData(0, 0, sprite.width, sprite.height);
+    const outlined = g.createImageData(sprite.width, sprite.height);
+    outlined.data.set(original.data);
+    const outlineRgb = [63, 46, 36, 255];
+    const setOutline = (x, y) => {
+      if (x < 0 || y < 0 || x >= sprite.width || y >= sprite.height) return;
+      const index = (y * sprite.width + x) * 4;
+      if (original.data[index + 3] !== 0 || outlined.data[index + 3] !== 0) return;
+      outlined.data[index] = outlineRgb[0];
+      outlined.data[index + 1] = outlineRgb[1];
+      outlined.data[index + 2] = outlineRgb[2];
+      outlined.data[index + 3] = outlineRgb[3];
+    };
+
+    for (let y = 0; y < sprite.height; y++) {
+      for (let x = 0; x < sprite.width; x++) {
+        const index = (y * sprite.width + x) * 4;
+        if (original.data[index + 3] <= 120) continue;
+        setOutline(x - 1, y);
+        setOutline(x + 1, y);
+        setOutline(x, y - 1);
+        setOutline(x, y + 1);
+      }
+    }
+    g.putImageData(outlined, 0, 0);
 
     return sprite;
   }

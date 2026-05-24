@@ -669,10 +669,12 @@
       drawPointFeatures(target, data.lakes, 1);
     }
     if (state.showMaritime && state.showSeaRoutes) drawSeaRoutes(target);
-    if (state.showRoads) drawRoads(target);
-    if (state.showRoads && state.showRestAreas) drawRestAreas(target);
-    if (state.showRailways) drawRailways(target);
+    if (state.showRoads) drawRoads(target, { labels: false });
+    if (state.showRailways) drawRailways(target, { stations: false });
     if (state.showAviation && state.showAirRoutes) drawAirRoutes(target);
+    if (state.showRoads) drawRoadLabels(target);
+    if (state.showRoads && state.showRestAreas) drawRestAreas(target);
+    if (state.showRailways && state.showRailwayStations && real?.railwayStations?.length) drawRailwayStations(target);
     if (state.showMaritime && state.showPorts) drawPorts(target);
     if (state.showAviation && state.showAirports) drawAirports(target);
     if (isNatureLayerVisible("showMountains")) drawMajorMountains(target);
@@ -1068,16 +1070,16 @@
     }
   }
 
-  function drawRoads(target) {
+  function drawRoads(target, options = {}) {
     if (real?.roads?.length) {
-      drawRealRoads(target);
+      drawRealRoads(target, options);
       return;
     }
     for (const road of data.roads) {
       if (!isRoadClassEnabled(road)) continue;
       const top = road.type === "expressway" ? palette.expressway : palette.national;
       drawCurvedPixelPath(target, road.points, top, road.type === "expressway" ? 6 : 4, 5, { wiggle: 0.3 });
-      if (state.showLabels && road.type === "expressway") {
+      if (options.labels !== false && state.showLabels && road.type === "expressway") {
         const mid = road.points[Math.floor(road.points.length / 2)];
         const p = toWorld(mid);
         drawLabelNear(target, road.name, p.x, p.y, 11, 7, -5);
@@ -1085,10 +1087,10 @@
     }
   }
 
-  function drawRailways(target) {
+  function drawRailways(target, options = {}) {
     if (!real?.railways?.length && !real?.railwayStations?.length) return;
     if (real?.railways?.length) drawRealRailways(target);
-    if (state.showRailwayStations && real?.railwayStations?.length) drawRailwayStations(target);
+    if (options.stations !== false && state.showRailwayStations && real?.railwayStations?.length) drawRailwayStations(target);
   }
 
   function drawProvinceBoundaries(target) {
@@ -1131,10 +1133,8 @@
     target.restore();
   }
 
-  function drawRealRoads(target) {
+  function drawRealRoads(target, options = {}) {
     const roads = [...real.roads].sort((a, b) => (a.class === b.class ? 0 : a.class === "expressway" ? 1 : -1));
-    const labeled = new Set();
-    let labelCount = 0;
 
     target.save();
     target.lineJoin = "round";
@@ -1145,23 +1145,48 @@
       if (!pathIntersectsView(road.path, 120)) continue;
       const color = road.class === "expressway" ? palette.expressway : palette.national;
       drawRoadTilePath(target, road.path, road.class, color);
-
-      if (state.showLabels && road.name && labelCount < 28 && road.length > 9000 && !labeled.has(road.name)) {
-        if (road.class === "national" && state.zoom < 1.35) continue;
-        const p = road.path[Math.floor(road.path.length / 2)];
-        drawLabelNear(target, road.name, p[0], p[1], 10, 7, -5);
-        labeled.add(road.name);
-        labelCount += 1;
-      }
     }
+    if (options.labels !== false) drawRoadLabels(target);
     drawRoadRouteHighlight(target, state.hoverPlace, "#bdf3ff");
     drawRoadRouteHighlight(target, state.selectedPlace, palette.selected);
     target.restore();
   }
 
+  function drawRoadLabels(target) {
+    if (!state.showLabels) return;
+    if (real?.roads?.length) {
+      drawRealRoadLabels(target);
+      return;
+    }
+
+    for (const road of data.roads) {
+      if (!isRoadClassEnabled(road) || road.type !== "expressway") continue;
+      const mid = road.points[Math.floor(road.points.length / 2)];
+      const p = toWorld(mid);
+      drawLabelNear(target, road.name, p.x, p.y, 11, 7, -5);
+    }
+  }
+
+  function drawRealRoadLabels(target) {
+    const roads = [...real.roads].sort((a, b) => (a.class === b.class ? 0 : a.class === "expressway" ? 1 : -1));
+    const labeled = new Set();
+    let labelCount = 0;
+
+    for (const road of roads) {
+      if (!isRoadVisible(road)) continue;
+      if (!pathIntersectsView(road.path, 120)) continue;
+      if (!road.name || labelCount >= 28 || road.length <= 9000 || labeled.has(road.name)) continue;
+      if (road.class === "national" && state.zoom < 1.35) continue;
+      const p = road.path[Math.floor(road.path.length / 2)];
+      drawLabelNear(target, road.name, p[0], p[1], 10, 7, -5);
+      labeled.add(road.name);
+      labelCount += 1;
+    }
+  }
+
   function drawRoadRouteHighlight(target, route, color) {
     if (!route || route.type !== "road" || !isRoadClassEnabled(route)) return;
-    const width = route.class === "expressway" ? 6.4 : 4.8;
+    const width = route.class === "expressway" ? 11.5 : 8.5;
     const paths = route.paths || (route.path ? [route.path] : []);
     if (!pathsIntersectView(paths, 140)) return;
     for (const path of paths) {
@@ -1209,7 +1234,7 @@
       if (!pathIntersectsView(rail.path, 120)) continue;
       drawRailTilePath(target, rail.path);
       if (rail === state.selectedPlace || rail === state.hoverPlace) {
-        drawWorldStroke(target, rail.path, rail === state.selectedPlace ? palette.selected : "#bdf3ff", 5, true);
+        drawWorldStroke(target, rail.path, rail === state.selectedPlace ? palette.selected : "#bdf3ff", 10.5, true);
       }
     }
 
@@ -1218,8 +1243,8 @@
 
   function drawRoadTilePath(target, path, roadClass, color) {
     const isExpressway = roadClass === "expressway";
-    drawWorldStroke(target, path, color, isExpressway ? 4.4 : 3.2, true);
-    drawPathTileStamps(target, path, isExpressway ? 11 : 9, (x, y, angle, index) => {
+    drawWorldStroke(target, path, color, isExpressway ? 8.8 : 6.4, true);
+    drawPathTileStamps(target, path, isExpressway ? 13 : 11, (x, y, angle, index) => {
       drawRoadTileStamp(target, x, y, angle, roadClass, index);
     });
   }
@@ -1227,8 +1252,8 @@
   function drawRoadTileStamp(target, x, y, angle, roadClass, index) {
     const isExpressway = roadClass === "expressway";
     const s = 1 / state.zoom;
-    const length = isExpressway ? 10 : 8;
-    const width = isExpressway ? 5.6 : 3.8;
+    const length = isExpressway ? 14 : 12;
+    const width = isExpressway ? 10.5 : 7.2;
     const surface = isExpressway
       ? index % 2
         ? "#e9bf58"
@@ -1244,19 +1269,19 @@
     target.fillRect((-length / 2) * s, (-width / 2) * s, length * s, width * s);
     if (index % 2 === 0) {
       target.fillStyle = isExpressway ? "#fff0b8" : "#f4d58d";
-      target.fillRect(-1.4 * s, -0.55 * s, 2.8 * s, 1.1 * s);
+      target.fillRect(-2.2 * s, -0.75 * s, 4.4 * s, 1.5 * s);
     }
     if (isExpressway && index % 3 === 0) {
       target.fillStyle = "rgba(124, 77, 37, 0.22)";
-      target.fillRect((-length / 2) * s, -2.4 * s, length * s, 0.8 * s);
-      target.fillRect((-length / 2) * s, 1.6 * s, length * s, 0.8 * s);
+      target.fillRect((-length / 2) * s, -4.7 * s, length * s, 1.1 * s);
+      target.fillRect((-length / 2) * s, 3.6 * s, length * s, 1.1 * s);
     }
     target.restore();
   }
 
   function drawRailTilePath(target, path) {
-    drawWorldStroke(target, path, "rgba(37, 43, 48, 0.5)", 4.4, true);
-    drawPathTileStamps(target, path, 10, (x, y, angle) => {
+    drawWorldStroke(target, path, "rgba(37, 43, 48, 0.5)", 8.8, true);
+    drawPathTileStamps(target, path, 12, (x, y, angle) => {
       drawRailTileStamp(target, x, y, angle);
     });
   }
@@ -1267,10 +1292,10 @@
     target.translate(x, y);
     target.rotate(angle);
     target.fillStyle = "#7d654a";
-    target.fillRect(-1.1 * s, -5.3 * s, 2.2 * s, 10.6 * s);
+    target.fillRect(-1.4 * s, -7.8 * s, 2.8 * s, 15.6 * s);
     target.fillStyle = palette.rail;
-    target.fillRect(-4.8 * s, -3.2 * s, 9.6 * s, 1.2 * s);
-    target.fillRect(-4.8 * s, 2 * s, 9.6 * s, 1.2 * s);
+    target.fillRect(-6.8 * s, -5 * s, 13.6 * s, 1.6 * s);
+    target.fillRect(-6.8 * s, 3.4 * s, 13.6 * s, 1.6 * s);
     target.restore();
   }
 
@@ -1289,7 +1314,7 @@
       const distance = Math.hypot(dx, dy);
       if (distance < 0.1) continue;
 
-      const visible = segmentIntersectsBounds(start, end, view, 20 / state.zoom);
+      const visible = segmentIntersectsBounds(start, end, view, 40 / state.zoom);
       const angle = Math.atan2(dy, dx);
       for (let d = phase ? spacing - phase : 0; d <= distance; d += spacing) {
         if (visible) {
@@ -1571,7 +1596,7 @@
       return;
     }
     if (feature.type === "railway" && feature.path?.length) {
-      drawWorldStroke(target, feature.path, color, 5, true);
+      drawWorldStroke(target, feature.path, color, 10.5, true);
       return;
     }
     if (feature.type === "seaRoute" && feature.path?.length) {
@@ -2771,7 +2796,7 @@
     if (state.showRoads && selectableRoadRoutes.length) {
       for (const route of selectableRoadRoutes) {
         if (!isRoadClassEnabled(route)) continue;
-        const tolerance = (route.class === "expressway" ? 9 : 7) / state.zoom;
+        const tolerance = (route.class === "expressway" ? 13 : 10) / state.zoom;
         const d = distanceToPaths([x, y], route.paths, tolerance);
         if (d <= tolerance) consider(route, d, linePriority);
       }
@@ -2788,7 +2813,7 @@
     if (state.showRailways && real?.railways?.length) {
       for (const rail of real.railways) {
         if (!isMajorRailway(rail)) continue;
-        const tolerance = 8 / state.zoom;
+        const tolerance = 12 / state.zoom;
         const d = distanceToPath([x, y], rail.path, tolerance);
         if (d <= tolerance) consider(rail, d, linePriority);
       }

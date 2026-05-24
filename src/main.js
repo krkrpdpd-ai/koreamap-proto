@@ -51,13 +51,10 @@
   const margin = 70;
   const fixedIconScale = 3;
   const labelScale = 1.35;
-  const playerScale = 0.08;
+  const playerScale = 0.04;
   const pointHitRadiusPx = 64;
   const hoverHitRadiusPx = 58;
-  const desiredStaticCachePaddingPx = 1800;
-  const minStaticCachePaddingPx = 900;
-  const maxStaticCachePixels = 22000000;
-  const motionCacheRefreshPx = 180;
+  const staticCachePaddingPx = 900;
   const staticScrollRedrawIntervalMs = 120;
   const playerMoveRedrawIdleMs = 180;
   const cameraMoveRedrawIdleMs = 140;
@@ -84,7 +81,6 @@
   let viewScrollTop = 0;
   let syncingFrameScroll = false;
   let frameScrollSyncPending = false;
-  let staticCachePaddingPx = desiredStaticCachePaddingPx;
   let staticDirtyReason = "content";
   const pathBoundsCache = new WeakMap();
 
@@ -436,7 +432,6 @@
     const viewportWidth = Math.max(1, Math.floor(frame.clientWidth || frame.getBoundingClientRect().width || mapWidth));
     const viewportHeight = Math.max(1, Math.floor(frame.clientHeight || frame.getBoundingClientRect().height || mapHeight));
     renderPixelRatio = Math.max(1, Math.min(window.devicePixelRatio || 1, 2));
-    staticCachePaddingPx = resolveStaticCachePadding(viewportWidth, viewportHeight, renderPixelRatio);
 
     if (mapContent) {
       mapContent.style.width = `${scaledWidth}px`;
@@ -458,17 +453,6 @@
     const zoomLevel = document.getElementById("zoomLevel");
     if (zoomLevel) zoomLevel.textContent = `${Math.round(state.zoom * 100)}%`;
     markStaticDirty("content");
-  }
-
-  function resolveStaticCachePadding(viewportWidth, viewportHeight, pixelRatio) {
-    let padding = desiredStaticCachePaddingPx;
-    while (
-      padding > minStaticCachePaddingPx &&
-      (viewportWidth + padding * 2) * (viewportHeight + padding * 2) * pixelRatio * pixelRatio > maxStaticCachePixels
-    ) {
-      padding -= 100;
-    }
-    return Math.max(minStaticCachePaddingPx, padding);
   }
 
   function applyWorldTransform(target, scrollLeft = viewScrollLeft, scrollTop = viewScrollTop) {
@@ -596,16 +580,6 @@
     syncFrameScrollToView();
   }
 
-  function isScrollMotionActive(now) {
-    return (
-      keys.size > 0 ||
-      dragPan.active ||
-      pinchZoom.active ||
-      now - lastPlayerMoveTime < playerMoveRedrawIdleMs ||
-      now - lastCameraMoveTime < cameraMoveRedrawIdleMs
-    );
-  }
-
   function setZoom(nextZoom, anchor = null) {
     const oldZoom = state.zoom;
     const clamped = clamp(nextZoom, 0.65, 20);
@@ -634,109 +608,34 @@
     staticCtx.setTransform(1, 0, 0, 1, 0, 0);
     staticCtx.clearRect(0, 0, staticCanvas.width, staticCanvas.height);
     applyWorldTransform(staticCtx, viewScrollLeft - staticCachePaddingPx, viewScrollTop - staticCachePaddingPx);
-    drawStaticContent(staticCtx);
-    staticCtx.setTransform(1, 0, 0, 1, 0, 0);
-    state.staticDirty = false;
-    staticDirtyReason = "none";
-    cachedStaticScrollLeft = viewScrollLeft;
-    cachedStaticScrollTop = viewScrollTop;
-    lastStaticDrawTime = performance.now();
-  }
-
-  function drawStaticContent(target) {
-    drawSea(target);
-    if (state.showGrid) drawGrid(target);
-    drawLand(target);
+    drawSea(staticCtx);
+    if (state.showGrid) drawGrid(staticCtx);
+    drawLand(staticCtx);
     if (isNatureLayerVisible("showNationalParks")) {
-      drawTerrain(target);
+      drawTerrain(staticCtx);
     }
     if (isNatureLayerVisible("showRivers")) {
-      drawRivers(target);
+      drawRivers(staticCtx);
     }
     if (isNatureLayerVisible("showLakes")) {
-      drawPointFeatures(target, data.lakes, 1);
+      drawPointFeatures(staticCtx, data.lakes, 1);
     }
-    if (state.showMaritime && state.showSeaRoutes) drawSeaRoutes(target);
-    if (state.showRoads) drawRoads(target);
-    if (state.showRoads && state.showRestAreas) drawRestAreas(target);
-    if (state.showRailways) drawRailways(target);
-    if (state.showMaritime && state.showPorts) drawPorts(target);
-    if (isNatureLayerVisible("showMountains")) drawMajorMountains(target);
-    if (state.showBoundaries && !real?.provinces?.length) drawProvinceBoundaries(target);
-    drawPlaces(target);
-    drawIslands(target);
-    drawCultureTourism(target);
-  }
-
-  function shouldRefreshMotionCache() {
-    if (!lastStaticDrawTime) return true;
-    const dx = Math.abs(viewScrollLeft - cachedStaticScrollLeft);
-    const dy = Math.abs(viewScrollTop - cachedStaticScrollTop);
-    return dx >= motionCacheRefreshPx || dy >= motionCacheRefreshPx;
-  }
-
-  function refreshStaticCacheByShift() {
-    if (!lastStaticDrawTime) {
-      drawStatic();
-      return;
-    }
-
-    const shiftX = Math.round((cachedStaticScrollLeft - viewScrollLeft) * renderPixelRatio);
-    const shiftY = Math.round((cachedStaticScrollTop - viewScrollTop) * renderPixelRatio);
-    if (!shiftX && !shiftY) {
-      state.staticDirty = false;
-      staticDirtyReason = "none";
-      return;
-    }
-    if (Math.abs(shiftX) >= staticCanvas.width || Math.abs(shiftY) >= staticCanvas.height) {
-      drawStatic();
-      return;
-    }
-
-    staticCtx.save();
+    if (state.showMaritime && state.showSeaRoutes) drawSeaRoutes(staticCtx);
+    if (state.showRoads) drawRoads(staticCtx);
+    if (state.showRoads && state.showRestAreas) drawRestAreas(staticCtx);
+    if (state.showRailways) drawRailways(staticCtx);
+    if (state.showMaritime && state.showPorts) drawPorts(staticCtx);
+    if (isNatureLayerVisible("showMountains")) drawMajorMountains(staticCtx);
+    if (state.showBoundaries && !real?.provinces?.length) drawProvinceBoundaries(staticCtx);
+    drawPlaces(staticCtx);
+    drawIslands(staticCtx);
+    drawCultureTourism(staticCtx);
     staticCtx.setTransform(1, 0, 0, 1, 0, 0);
-    staticCtx.imageSmoothingEnabled = false;
-    staticCtx.drawImage(staticCanvas, shiftX, shiftY);
-    staticCtx.restore();
-
-    const rects = exposedCacheRects(shiftX, shiftY);
-    drawStaticCacheRegions(rects);
     state.staticDirty = false;
     staticDirtyReason = "none";
     cachedStaticScrollLeft = viewScrollLeft;
     cachedStaticScrollTop = viewScrollTop;
     lastStaticDrawTime = performance.now();
-  }
-
-  function exposedCacheRects(shiftX, shiftY) {
-    const rects = [];
-    if (shiftX > 0) {
-      rects.push({ x: 0, y: 0, width: shiftX, height: staticCanvas.height });
-    } else if (shiftX < 0) {
-      rects.push({ x: staticCanvas.width + shiftX, y: 0, width: -shiftX, height: staticCanvas.height });
-    }
-
-    if (shiftY > 0) {
-      rects.push({ x: 0, y: 0, width: staticCanvas.width, height: shiftY });
-    } else if (shiftY < 0) {
-      rects.push({ x: 0, y: staticCanvas.height + shiftY, width: staticCanvas.width, height: -shiftY });
-    }
-    return rects.filter((rect) => rect.width > 0 && rect.height > 0);
-  }
-
-  function drawStaticCacheRegions(rects) {
-    if (!rects.length) return;
-    staticCtx.save();
-    staticCtx.setTransform(1, 0, 0, 1, 0, 0);
-    staticCtx.beginPath();
-    for (const rect of rects) {
-      staticCtx.rect(rect.x, rect.y, rect.width, rect.height);
-    }
-    staticCtx.clip();
-    staticCtx.clearRect(0, 0, staticCanvas.width, staticCanvas.height);
-    applyWorldTransform(staticCtx, viewScrollLeft - staticCachePaddingPx, viewScrollTop - staticCachePaddingPx);
-    drawStaticContent(staticCtx);
-    staticCtx.restore();
   }
 
   function drawSea(target) {
@@ -2018,8 +1917,9 @@
     if (!lastStaticDrawTime) return false;
     const dx = Math.abs(viewScrollLeft - cachedStaticScrollLeft);
     const dy = Math.abs(viewScrollTop - cachedStaticScrollTop);
-    if (isScrollMotionActive(now)) return true;
     if (dx > staticCachePaddingPx * 0.88 || dy > staticCachePaddingPx * 0.88) return false;
+    if (now - lastPlayerMoveTime < playerMoveRedrawIdleMs) return true;
+    if (now - lastCameraMoveTime < cameraMoveRedrawIdleMs) return true;
     return now - lastStaticDrawTime < staticScrollRedrawIntervalMs;
   }
 
@@ -2037,17 +1937,9 @@
   }
 
   function render(now = performance.now()) {
-    if (state.staticDirty) {
-      if (staticDirtyReason === "scroll" && isScrollMotionActive(now) && shouldRefreshMotionCache()) {
-        refreshStaticCacheByShift();
-      } else if (!shouldDeferScrollRedraw(now)) {
-        drawStatic();
-      }
-    }
+    if (state.staticDirty && !shouldDeferScrollRedraw(now)) drawStatic();
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    ctx.fillStyle = palette.sea;
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
     drawStaticCache(ctx);
     applyWorldTransform(ctx);
     drawPlayer(ctx);

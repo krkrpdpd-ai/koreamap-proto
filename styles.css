@@ -127,6 +127,16 @@ body {
   user-select: none;
 }
 
+.toolbar select {
+  min-height: 34px;
+  padding: 6px 28px 6px 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel);
+  color: var(--ink);
+  font: 13px/1.2 "Segoe UI", "Malgun Gothic", system-ui, sans-serif;
+}
+
 .toolbar input {
   accent-color: #79c26a;
 }

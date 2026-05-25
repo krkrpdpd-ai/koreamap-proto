@@ -42,6 +42,7 @@
     showLabels: true,
     showGrid: true,
     musicEnabled: false,
+    musicTrack: "dotAdventure",
     zoom: 20,
     staticDirty: true,
     hoverPlace: null,
@@ -69,8 +70,6 @@
   const trainVehicleCount = 7;
   const shipVehicleCount = 8;
   const planeVehicleCount = 9;
-  const musicTempoBpm = 132;
-  const musicStepMs = 60000 / musicTempoBpm / 2;
   const mapWidth = Math.ceil(((bounds.east - bounds.west) * kmPerDegLon / tileKm) * tilePx) + margin * 2;
   const mapHeight = Math.ceil(((bounds.north - bounds.south) * kmPerDegLat / tileKm) * tilePx) + margin * 2;
 
@@ -3324,6 +3323,81 @@
     return true;
   }
 
+  const musicTracks = {
+    dotAdventure: {
+      tempo: 132,
+      steps: 32,
+      leadType: "square",
+      leadVolume: 0.045,
+      leadDuration: 0.16,
+      harmonyType: "triangle",
+      bassType: "sawtooth",
+      percussion: "light",
+      melody: [72, 74, 76, 79, 76, 74, 72, 67, 69, 72, 74, 76, 79, 81, 79, 76, 74, 72, 69, 67, 69, 72, 76, 74, 72, 74, 76, 79, 84, 81, 79, 76],
+      bass: [48, 48, 55, 55, 45, 45, 53, 53],
+      chords: [
+        [60, 64, 67],
+        [67, 71, 74],
+        [57, 60, 64],
+        [65, 69, 72]
+      ]
+    },
+    gukakFestival: {
+      tempo: 108,
+      steps: 32,
+      leadType: "triangle",
+      leadVolume: 0.052,
+      leadDuration: 0.2,
+      harmonyType: "sine",
+      bassType: "triangle",
+      percussion: "janggu",
+      melody: [67, 70, 72, 75, 77, 75, 72, 70, 67, 70, 72, 70, 65, 67, 70, 72, 75, 77, 79, 77, 75, 72, 70, 67, 65, 67, 70, 72, 70, 67, 65, 62],
+      bass: [43, 50, 43, 55, 45, 52, 45, 50],
+      chords: [
+        [55, 62, 67],
+        [58, 65, 70],
+        [53, 60, 65],
+        [55, 62, 70]
+      ]
+    },
+    kpopDrive: {
+      tempo: 124,
+      steps: 32,
+      leadType: "square",
+      leadVolume: 0.048,
+      leadDuration: 0.14,
+      harmonyType: "triangle",
+      bassType: "sawtooth",
+      percussion: "kpop",
+      melody: [76, 76, 79, 81, 83, 81, 79, 76, 74, 76, 79, 81, 79, 76, 74, 72, 76, 79, 81, 83, 86, 83, 81, 79, 76, 74, 76, 79, 81, 79, 76, 74],
+      bass: [45, 45, 52, 52, 41, 41, 48, 48],
+      chords: [
+        [57, 60, 64],
+        [64, 67, 71],
+        [53, 57, 60],
+        [60, 64, 67]
+      ]
+    },
+    gukakKpopRemix: {
+      tempo: 128,
+      steps: 32,
+      leadType: "triangle",
+      leadVolume: 0.052,
+      leadDuration: 0.15,
+      harmonyType: "square",
+      bassType: "sawtooth",
+      percussion: "fusion",
+      melody: [72, 75, 77, 79, 84, 79, 77, 75, 72, 75, 79, 77, 75, 72, 70, 67, 70, 72, 75, 77, 79, 84, 86, 84, 79, 77, 75, 72, 75, 77, 79, 75],
+      bass: [48, 48, 55, 55, 45, 45, 52, 52],
+      chords: [
+        [60, 67, 72],
+        [55, 62, 67],
+        [57, 64, 69],
+        [53, 60, 65]
+      ]
+    }
+  };
+
   async function startBackgroundMusic() {
     const AudioContextCtor = window.AudioContext || window.webkitAudioContext;
     if (!AudioContextCtor) return false;
@@ -3334,9 +3408,7 @@
     await musicContext.resume();
     state.musicEnabled = true;
     if (musicTimer) return true;
-    musicStepIndex = 0;
-    playMusicStep();
-    musicTimer = window.setInterval(playMusicStep, musicStepMs);
+    restartMusicTimer();
     return true;
   }
 
@@ -3349,6 +3421,16 @@
     if (musicContext?.state === "running") {
       musicContext.suspend();
     }
+  }
+
+  function setupMusicTrackSelect() {
+    const el = document.getElementById("musicTrack");
+    if (!el) return;
+    el.value = state.musicTrack;
+    el.addEventListener("change", () => {
+      state.musicTrack = musicTracks[el.value] ? el.value : "dotAdventure";
+      if (state.musicEnabled) restartMusicTimer();
+    });
   }
 
   function setupMusicToggle() {
@@ -3375,28 +3457,65 @@
     });
   }
 
+  function restartMusicTimer() {
+    if (musicTimer) window.clearInterval(musicTimer);
+    musicTimer = null;
+    musicStepIndex = 0;
+    playMusicStep();
+    musicTimer = window.setInterval(playMusicStep, musicStepMs());
+  }
+
+  function currentMusicTrack() {
+    return musicTracks[state.musicTrack] || musicTracks.dotAdventure;
+  }
+
+  function musicStepMs() {
+    return 60000 / currentMusicTrack().tempo / 2;
+  }
+
   function playMusicStep() {
     if (!state.musicEnabled || !musicContext || musicContext.state !== "running") return;
-    const step = musicStepIndex % 32;
-    const melody = [72, 74, 76, 79, 76, 74, 72, 67, 69, 72, 74, 76, 79, 81, 79, 76, 74, 72, 69, 67, 69, 72, 76, 74, 72, 74, 76, 79, 84, 81, 79, 76];
-    const bass = [48, 48, 55, 55, 45, 45, 53, 53];
-    const chords = [
-      [60, 64, 67],
-      [67, 71, 74],
-      [57, 60, 64],
-      [65, 69, 72]
-    ];
+    const track = currentMusicTrack();
+    const step = musicStepIndex % track.steps;
+    const melody = track.melody;
+    const bass = track.bass;
+    const chords = track.chords;
 
-    playMusicNote(melody[step], 0.16, "square", 0.045);
-    if (step % 2 === 0) playMusicNote(melody[(step + 5) % melody.length] + 12, 0.08, "triangle", 0.018);
+    playMusicPercussion(track.percussion, step);
+    playMusicNote(melody[step % melody.length], track.leadDuration, track.leadType, track.leadVolume);
+    if (step % 2 === 0) playMusicNote(melody[(step + 5) % melody.length] + 12, 0.08, track.harmonyType, 0.016);
     if (step % 4 === 0) {
-      playMusicNote(bass[Math.floor(step / 4) % bass.length], 0.28, "sawtooth", 0.04);
+      playMusicNote(bass[Math.floor(step / 4) % bass.length], 0.28, track.bassType, 0.04);
       for (const note of chords[Math.floor(step / 8) % chords.length]) {
-        playMusicNote(note, 0.42, "triangle", 0.018);
+        playMusicNote(note, 0.42, track.harmonyType, 0.016);
       }
     }
-    if (step % 8 === 6) playMusicNote(84, 0.07, "square", 0.02);
+    if (step % 8 === 6) playMusicNote(melody[(step + 3) % melody.length] + 12, 0.07, "square", 0.02);
     musicStepIndex += 1;
+  }
+
+  function playMusicPercussion(style, step) {
+    if (style === "light") {
+      if (step % 8 === 0) playMusicNote(36, 0.08, "sine", 0.035);
+      if (step % 8 === 4) playMusicNoise(0.06, 0.018, "highpass", 1800);
+      return;
+    }
+    if (style === "janggu") {
+      if ([0, 6, 10, 14].includes(step % 16)) playMusicNote(43, 0.07, "triangle", 0.04);
+      if ([3, 7, 11, 15].includes(step % 16)) playMusicNoise(0.04, 0.016, "bandpass", 950);
+      return;
+    }
+    if (style === "kpop") {
+      if (step % 8 === 0 || step % 8 === 3) playMusicNote(36, 0.07, "sine", 0.04);
+      if (step % 8 === 4) playMusicNoise(0.06, 0.025, "bandpass", 1400);
+      if (step % 2 === 1) playMusicNoise(0.025, 0.01, "highpass", 4200);
+      return;
+    }
+    if (style === "fusion") {
+      if (step % 8 === 0 || step % 8 === 3) playMusicNote(36, 0.07, "sine", 0.04);
+      if ([2, 6, 10, 14].includes(step % 16)) playMusicNoise(0.04, 0.016, "bandpass", 900);
+      if (step % 2 === 1) playMusicNoise(0.025, 0.009, "highpass", 4600);
+    }
   }
 
   function playMusicNote(midiNote, durationSec, type, volume) {
@@ -3412,6 +3531,29 @@
     osc.connect(gain).connect(musicContext.destination);
     osc.start(now);
     osc.stop(now + durationSec + 0.03);
+  }
+
+  function playMusicNoise(durationSec, volume, filterType, frequency) {
+    if (!musicContext) return;
+    const now = musicContext.currentTime;
+    const frameCount = Math.max(1, Math.floor(musicContext.sampleRate * durationSec));
+    const buffer = musicContext.createBuffer(1, frameCount, musicContext.sampleRate);
+    const data = buffer.getChannelData(0);
+    for (let i = 0; i < frameCount; i++) {
+      data[i] = (pseudo(i + musicStepIndex * 13, frequency) * 2 - 1) * (1 - i / frameCount);
+    }
+
+    const source = musicContext.createBufferSource();
+    const filter = musicContext.createBiquadFilter();
+    const gain = musicContext.createGain();
+    filter.type = filterType;
+    filter.frequency.value = frequency;
+    gain.gain.setValueAtTime(Math.max(0.0002, volume), now);
+    gain.gain.exponentialRampToValueAtTime(0.0001, now + durationSec);
+    source.buffer = buffer;
+    source.connect(filter).connect(gain).connect(musicContext.destination);
+    source.start(now);
+    source.stop(now + durationSec + 0.02);
   }
 
   function midiToFrequency(note) {
@@ -3480,6 +3622,7 @@
   setToggle("toggleBoundaries", "showBoundaries");
   setToggle("toggleLabels", "showLabels");
   setToggle("toggleGrid", "showGrid");
+  setupMusicTrackSelect();
   setupMusicToggle();
   syncToggleGroups();
 

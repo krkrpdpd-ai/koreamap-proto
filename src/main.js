@@ -41,6 +41,7 @@
     showBoundaries: false,
     showLabels: true,
     showGrid: true,
+    musicEnabled: false,
     zoom: 20,
     staticDirty: true,
     hoverPlace: null,
@@ -68,6 +69,8 @@
   const trainVehicleCount = 7;
   const shipVehicleCount = 8;
   const planeVehicleCount = 9;
+  const musicTempoBpm = 132;
+  const musicStepMs = 60000 / musicTempoBpm / 2;
   const mapWidth = Math.ceil(((bounds.east - bounds.west) * kmPerDegLon / tileKm) * tilePx) + margin * 2;
   const mapHeight = Math.ceil(((bounds.north - bounds.south) * kmPerDegLat / tileKm) * tilePx) + margin * 2;
 
@@ -88,6 +91,9 @@
   let renderWorldBoundsOverride = null;
   let staticDirtyReason = "content";
   let deferredLabels = null;
+  let musicContext = null;
+  let musicTimer = null;
+  let musicStepIndex = 0;
   const pathBoundsCache = new WeakMap();
   const staticTileCache = new Map();
 
@@ -3318,6 +3324,100 @@
     return true;
   }
 
+  async function startBackgroundMusic() {
+    const AudioContextCtor = window.AudioContext || window.webkitAudioContext;
+    if (!AudioContextCtor) return false;
+    if (!musicContext || musicContext.state === "closed") {
+      musicContext = new AudioContextCtor();
+    }
+
+    await musicContext.resume();
+    state.musicEnabled = true;
+    if (musicTimer) return true;
+    musicStepIndex = 0;
+    playMusicStep();
+    musicTimer = window.setInterval(playMusicStep, musicStepMs);
+    return true;
+  }
+
+  function stopBackgroundMusic() {
+    state.musicEnabled = false;
+    if (musicTimer) {
+      window.clearInterval(musicTimer);
+      musicTimer = null;
+    }
+    if (musicContext?.state === "running") {
+      musicContext.suspend();
+    }
+  }
+
+  function setupMusicToggle() {
+    const el = document.getElementById("toggleMusic");
+    if (!el) return;
+    el.checked = state.musicEnabled;
+    el.addEventListener("change", async () => {
+      if (!el.checked) {
+        stopBackgroundMusic();
+        return;
+      }
+
+      try {
+        const started = await startBackgroundMusic();
+        if (!started) {
+          el.checked = false;
+          state.musicEnabled = false;
+        }
+      } catch (error) {
+        console.warn("Music could not start.", error);
+        el.checked = false;
+        stopBackgroundMusic();
+      }
+    });
+  }
+
+  function playMusicStep() {
+    if (!state.musicEnabled || !musicContext || musicContext.state !== "running") return;
+    const step = musicStepIndex % 32;
+    const melody = [72, 74, 76, 79, 76, 74, 72, 67, 69, 72, 74, 76, 79, 81, 79, 76, 74, 72, 69, 67, 69, 72, 76, 74, 72, 74, 76, 79, 84, 81, 79, 76];
+    const bass = [48, 48, 55, 55, 45, 45, 53, 53];
+    const chords = [
+      [60, 64, 67],
+      [67, 71, 74],
+      [57, 60, 64],
+      [65, 69, 72]
+    ];
+
+    playMusicNote(melody[step], 0.16, "square", 0.045);
+    if (step % 2 === 0) playMusicNote(melody[(step + 5) % melody.length] + 12, 0.08, "triangle", 0.018);
+    if (step % 4 === 0) {
+      playMusicNote(bass[Math.floor(step / 4) % bass.length], 0.28, "sawtooth", 0.04);
+      for (const note of chords[Math.floor(step / 8) % chords.length]) {
+        playMusicNote(note, 0.42, "triangle", 0.018);
+      }
+    }
+    if (step % 8 === 6) playMusicNote(84, 0.07, "square", 0.02);
+    musicStepIndex += 1;
+  }
+
+  function playMusicNote(midiNote, durationSec, type, volume) {
+    if (!musicContext) return;
+    const now = musicContext.currentTime;
+    const osc = musicContext.createOscillator();
+    const gain = musicContext.createGain();
+    osc.type = type;
+    osc.frequency.value = midiToFrequency(midiNote);
+    gain.gain.setValueAtTime(0.0001, now);
+    gain.gain.exponentialRampToValueAtTime(Math.max(0.0002, volume), now + 0.015);
+    gain.gain.exponentialRampToValueAtTime(0.0001, now + durationSec);
+    osc.connect(gain).connect(musicContext.destination);
+    osc.start(now);
+    osc.stop(now + durationSec + 0.03);
+  }
+
+  function midiToFrequency(note) {
+    return 440 * Math.pow(2, (note - 69) / 12);
+  }
+
   function setToggle(id, key) {
     const el = document.getElementById(id);
     if (!el) return;
@@ -3380,6 +3480,7 @@
   setToggle("toggleBoundaries", "showBoundaries");
   setToggle("toggleLabels", "showLabels");
   setToggle("toggleGrid", "showGrid");
+  setupMusicToggle();
   syncToggleGroups();
 
   document.getElementById("zoomOut").addEventListener("click", () => setZoom(state.zoom - 0.15));
